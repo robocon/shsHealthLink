@@ -41,5 +41,5 @@ $res = [
     'gender'=>$gender,
     'birthDate'=>$birthDate,
 ];
-
+header("Content-Type: application/json");
 echo json_encode($res);
