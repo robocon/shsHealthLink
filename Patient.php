@@ -12,7 +12,7 @@ if($p['sex']=='ญ'){
     $gender = 'male';
 }
 
-list($y,$m,$d) = explode('-', $p['dbirth']);
+
 $name = array();
 $name[] = array(
     'use'=>'official',
@@ -34,6 +34,7 @@ if(!empty($p['name_eng'])){
 $status = strtolower($p['status']);
 $active = ($status=='y') ? true : false ;
 
+list($y,$m,$d) = explode('-', $p['dbirth']);
 $birthDate = ($y-543)."-$m-$d";
 $res = [
     'resourceType'=>'Patient',
