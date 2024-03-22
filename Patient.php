@@ -13,31 +13,38 @@ if($p['sex']=='ญ'){
 }
 
 list($y,$m,$d) = explode('-', $p['dbirth']);
+$name = array();
+$name[] = array(
+    'use'=>'official',
+    'family'=>$p['surname'],
+    'given'=>$p['name'],
+    'prefix'=>$p['yot']
+);
+
+if(!empty($p['name_eng'])){
+    $name_eng = array(
+        'use'=>'usual',
+        'family'=>$p['surname_eng'],
+        'given'=>$p['name_eng'],
+        'prefix'=>$p['prename']
+    );
+
+    $name[] = $name_eng;
+}
+$status = strtolower($p['status']);
+$active = ($status=='y') ? true : false ;
 
 $birthDate = ($y-543)."-$m-$d";
 $res = [
     'resourceType'=>'Patient',
-    'id'=>$p['idcard'],
+    'id'=>'c'.$p['idcard'],
     'identifier'=>[
         'use'=>'official',
         'system'=>'http://dopa.go.th',
         'value'=>$p['idcard']
     ],
-    'active'=>true,
-    'name'=>[
-        [
-            'use'=>'official',
-            'family'=>$p['surname'],
-            'given'=>$p['name'],
-            'prefix'=>$p['yot']
-        ],
-        [
-            'use'=>'usual',
-            'family'=>$p['surname_eng'],
-            'given'=>$p['name_eng'],
-            'prefix'=>$p['prename']
-        ],
-    ],
+    'active'=>$active,
+    'name'=>$name,
     'gender'=>$gender,
     'birthDate'=>$birthDate,
 ];
