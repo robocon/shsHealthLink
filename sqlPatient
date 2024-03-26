@@ -1,6 +1,15 @@
 /* MUST HAVE THIS FUNCTION
-- patientActive('mx07')
-- strToEn('2528-08-30')
+@param string 
+patientActive('mx07') 
+@return string true/false
+
+@param string 
+strToEn('2528-08-30') 
+@return date
+
+@param string 
+strDatetimeToEn('2024-03-08 19:19:59'); 
+@return string in format BC
 */
 INSERT INTO `client_patient` (`source_id`, `cid`, `active`, `name_prefix`, `name_given`, `name_family`, `gender`, `birth_date`, `last_visit_date`, `last_update_date_time`) 
 SELECT '001151200' AS `source_id`,
@@ -12,40 +21,12 @@ b.`surname` AS `name_family`,
 IF(b.`sex`='ช', 'male', 'female') AS `gender`,
 strToEn(b.`dbirth`) AS `birthdate`,
 SUBSTRING(strToEn(b.`lastupdate`),1,10) AS `last_visit_date`,
-DATE_FORMAT(strToEn(b.`lastupdate`), '%Y-%m-%dT%TZ') AS `last_update_date_time`
+DATE_FORMAT(strDatetimeToEn(b.`lastupdate`), '%Y-%m-%dT%TZ') AS `last_update_date_time`
 FROM (
     SELECT MAX(`row_id`) AS `last_id`, `idcard`, `idguard`, COUNT(`idcard`) 
     FROM `opcard` 
     WHERE (`idcard` <> '' AND `idcard` != '0' AND `idcard` NOT LIKE '-%' AND `idcard` NOT LIKE '.%') 
     GROUP BY `idcard`
-    ORDER BY COUNT(`idcard`) DESC
+    ORDER BY MAX(`row_id`) ASC
 ) AS a 
-LEFT JOIN `opcard` AS b ON b.`row_id` = a.`last_id`
-
-
-CREATE DEFINER = `root`@`localhost` FUNCTION `NewProc`(`idguard` varchar(4))
- RETURNS tinyint(1)
-    NO SQL
-BEGIN
-
-	DECLARE a tinyint(1);
-
-	IF idguard='mx07' OR idguard='mx04' OR idguard='mx05' OR idguard='' THEN 
-		SET a = 0 ;
-	ELSE 
-		SET a = 1;
-	END IF;
-
-	RETURN a;
-END;
-
-CREATE DEFINER = `root`@`localhost` FUNCTION `NewProc`(`mDate` varchar(10))
- RETURNS date
-    NO SQL
-BEGIN
-	# Support format yyyy-mm-dd to ENG DATE
-	DECLARE fDate VARCHAR(10);
-	SET fDate = CONCAT( (SUBSTRING(mDate,1,4) - 543), SUBSTRING(mDate,5,6)  );
-	RETURN fDate;
-END;
-
+LEFT JOIN `opcard` AS b ON b.`row_id` = a.`last_id` 
