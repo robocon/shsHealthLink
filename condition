@@ -1,0 +1,25 @@
+SELECT 
+'001151200' AS `source_id`,
+'' AS `id`,
+'' AS `patient_cid`,
+'' AS `encounter_id`,
+'' AS `clinical_status`,
+'' AS `verification_status`,
+'' AS `category`,
+'' AS `severity`,
+'' AS `code_display`,
+'' AS `code_code`,
+'' AS `code_system`,
+'' AS `body_site_display`,
+'' AS `body_site_code`,
+'' AS `recorded_date`,
+'' AS `note`,
+'' AS `note_date_time`,
+'' AS `diagnosis_display`,
+'' AS `diagnosis_code`,
+'' AS `diagnosis_system`,
+'' AS `diagnosis_rank`,
+'' AS `deleted`,
+'' AS `last_update_date_time` 
+FROM `diag` AS a 
+LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn`
