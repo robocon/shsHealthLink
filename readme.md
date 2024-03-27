@@ -16,3 +16,5 @@ LEFT JOIN `opcard` AS b ON b.`row_id` = a.`last_id`
 
 ฟังก์ชั่นทั้งหมดของ Mysql สามารถเข้าไปดูได้ในโฟเดอร์ `functions`<br>
 ตัวอย่างการสร้าง [MySQL Function ใน PHPMyAdmin](https://www.experts-exchange.com/questions/29003352/Creating-Functions-in-phpMyAdmin.html)
+
+ตัวอย่างโครงสร้างที่จะส่งให้ FHIR Client อยู่ใน `tables`
