@@ -22,7 +22,7 @@ DROP TABLE IF EXISTS `client_patient`;
 CREATE TABLE `client_patient` (
   `source_id` varchar(255) NOT NULL,
   `cid` varchar(255) DEFAULT NULL,
-  `active` varchar(5) DEFAULT NULL,
+  `active` tinyint(1) DEFAULT NULL,
   `name_prefix` varchar(255) DEFAULT NULL,
   `name_given` varchar(255) DEFAULT NULL,
   `name_family` varchar(255) DEFAULT NULL,

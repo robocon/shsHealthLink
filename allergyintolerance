@@ -28,7 +28,7 @@ allergyReaction(a.`advreact`) AS `reaction_system`,
 'moderate' AS `reaction_severity`,
 '' AS `note`,
 '' AS `note_date_time`,
-'false' AS `deleted`,
+0 AS `deleted`,
 DATE_FORMAT(strDatetimeToEn(a.`date`), '%Y-%m-%dT%TZ') AS `last_update_date_time`
 FROM `drugreact` AS a 
 LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn` 

@@ -40,7 +40,7 @@ CREATE TABLE `client_allergyintolerance` (
   `reaction_severity` varchar(255) DEFAULT NULL,
   `note` varchar(255) DEFAULT NULL,
   `note_date_time` datetime DEFAULT NULL,
-  `deleted` varchar(255) DEFAULT NULL,
+  `deleted` tinyint(1) DEFAULT NULL,
   `last_update_date_time` datetime DEFAULT NULL,
   UNIQUE KEY `id` (`id`),
   KEY `code_display` (`code_display`)
