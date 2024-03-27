@@ -1,5 +1,6 @@
 /* MUST HAVE THIS FUNCTION
-allergyReaction('');
+- allergyReaction
+- strDatetimeToEn
 */
 INSERT INTO `client_allergyintolerance` (`source_id`, `id`, `patient_cid`, `encounter_id`, `clinical_status`, `verification_status`, `type`, `category`, `criticality`, `code_display`,`code_code`,`code_system`,`onset_date_time`,`recorded_date`,`reaction_display`,`reaction_code`,`reaction_system`,`reaction_severity`,`note`,`note_date_time`,`deleted`,`last_update_date_time`) 
 SELECT '001151200' AS `source_id`,

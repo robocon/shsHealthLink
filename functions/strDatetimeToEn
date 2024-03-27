@@ -1,0 +1,13 @@
+/*
+เปลี่ยน พ.ศ. เป็น ค.ศ. ในรูปแบบ %Y-%m-%dT%T
+@param string mDate
+@return string fDate
+*/
+CREATE DEFINER = `root`@`localhost` FUNCTION `strDatetimeToEn`(`mDate` varchar(25))
+ RETURNS varchar(25)
+    NO SQL
+BEGIN
+	DECLARE fDate VARCHAR(25);
+	SET fDate = CONCAT( (SUBSTRING(mDate,1,4) - 543), SUBSTRING(mDate,5, 25)  );
+	RETURN fDate;
+END;

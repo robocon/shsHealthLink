@@ -1,0 +1,20 @@
+/*
+ถ้าเป็น mx07(ทำลายประวัติ) mx04(เสียชีวิต) mx05(ยุบประวัติ)
+@param string idguard
+@return tinyint a
+*/
+CREATE DEFINER = `root`@`localhost` FUNCTION `patientActive`(`idguard` varchar(4))
+ RETURNS tinyint(1)
+    NO SQL
+BEGIN
+
+	DECLARE a tinyint(1);
+
+	IF idguard='mx07' OR idguard='mx04' OR idguard='mx05' OR idguard='' THEN 
+		SET a = 0;
+	ELSE 
+		SET a = 1;
+	END IF;
+
+	RETURN a;
+END;

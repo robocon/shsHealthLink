@@ -1,0 +1,16 @@
+/*
+เปลี่ยนจาก Comma(,) เป็น Vertical Line(|)
+@param string reaction
+@return string a
+*/
+CREATE DEFINER = `root`@`localhost` FUNCTION `allergyReaction`(`reaction` varchar(255))
+ RETURNS varchar(255)
+    NO SQL
+BEGIN
+	DECLARE a varchar(255);
+	SET a = TRIM(BOTH ' ' FROM reaction);
+	SET a = TRIM(LEADING ',' FROM a);
+	SET a = REPLACE(a, ',', '|');
+	SET a = TRIM(BOTH '|' FROM a);
+	RETURN a;
+END;
