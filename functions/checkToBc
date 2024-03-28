@@ -1,0 +1,17 @@
+CREATE DEFINER = `root`@`localhost` FUNCTION `checkToBc`(`mDate` varchar(25))
+ RETURNS varchar(25)
+    NO SQL
+BEGIN
+	DECLARE a VARCHAR(25);
+	
+	IF mDate = '' OR mDate IS NULL THEN
+		SET a = '0000-00-00 00:00:00';
+	ELSEIF SUBSTRING(mDate,1,2) = '25' THEN
+		SET a = DATE_FORMAT(strDatetimeToEn(mDate), '%Y-%m-%dT%TZ');
+	ELSE 
+		SET a = mDate;
+	END IF;
+
+	RETURN a;
+END;
+

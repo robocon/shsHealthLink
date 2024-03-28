@@ -1,0 +1,28 @@
+SELECT a.row_id,
+'001151200' AS `source_id`,
+a.`row_id` AS `id`,
+TRIM(a.`idcard`) AS `patient_cid`,
+
+(CASE
+WHEN a.`an` != '' THEN IF(getIpcard(a.`an`)='0000-00-00 00:00:00','in-progress','finished') 
+ELSE 'finished'
+END) AS 'status',
+
+'' AS 'class',
+'' AS 'type_display',
+'' AS 'type_code',
+'' AS 'type_system',
+'' AS 'service_type_display',
+'' AS 'service_type_code',
+'' AS 'service_type_system',
+strDatetimeToen(a.`thidate`) AS 'period_start',
+'' AS 'period_end',
+'' AS 'reason_display',
+'' AS 'reason_code',
+'' AS 'reason_system',
+'001151200' AS 'service_provider',
+0 AS 'deleted',
+strDatetimeToen(a.`thidate`) AS 'last_update_date_time'
+FROM `opday` AS a 
+LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn` 
+WHERE (b.`idcard` <> '' AND b.`idcard` != '-') 

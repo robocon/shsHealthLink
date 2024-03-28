@@ -3,6 +3,7 @@
 - strToEn
 - strDatetimeToEn
 */
+TRUNCATE TABLE `client_patient`;
 INSERT INTO `client_patient` (`source_id`, `cid`, `active`, `name_prefix`, `name_given`, `name_family`, `gender`, `birth_date`, `last_visit_date`, `last_update_date_time`) 
 SELECT '001151200' AS `source_id`,
 b.`idcard` AS `cid`,

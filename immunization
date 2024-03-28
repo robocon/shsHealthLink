@@ -1,8 +1,12 @@
+/* MUST HAVE THIS FUNCTION
+- strDatetimeToEn
+*/
+TRUNCATE TABLE `client_immunization`;
 INSERT INTO `client_immunization` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `vaccine_display`, `vaccine_code`, `vaccine_system`, `occurrence_date_time`, `performer`, `note`, `note_date_time`, `deleted`, `last_update_date_time`)
 SELECT '001151200' AS 'source_id',
 a.`row_id` AS 'id',
 b.`idcard` AS 'patient_cid',
-a.`row_id` AS 'encounter_id',
+'' AS 'encounter_id',
 'completed' AS 'status',
 c.`genname` AS 'vaccine_display',
 c.`tmt` AS 'vaccine_code',
@@ -11,7 +15,7 @@ strDatetimeToEn(a.`date`) AS 'occurrence_date_time',
 '001151200' AS 'performer',
 '' AS 'note',
 '' AS 'note_date_time',
-0 AS 'deleted',
+false AS 'deleted',
 strDatetimeToEn(a.`date`) AS 'last_update_date_time' 
 FROM (
 	SELECT `row_id`,`date`,`hn`,`drugcode`,`tradname` 
@@ -20,7 +24,7 @@ FROM (
 	AND ( `amount` > 0 AND `reject` != 'Y' ) 
 	AND ( `drugcode` LIKE '0%' or `drugcode` LIKE '2%') 
 	ORDER BY `row_id` ASC 
-) AS a  
+) AS a 
 LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn` 
 LEFT JOIN `druglst` AS c ON c.`drugcode` = a.`drugcode`
 ORDER BY a.`row_id` ASC 

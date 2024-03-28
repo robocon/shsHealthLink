@@ -1,7 +1,7 @@
 SELECT 
 '001151200' AS `source_id`,
-'' AS `id`,
-'' AS `patient_cid`,
+a.row_id AS `id`,
+b.idcard AS `patient_cid`,
 '' AS `encounter_id`,
 '' AS `clinical_status`,
 '' AS `verification_status`,

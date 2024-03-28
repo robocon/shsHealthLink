@@ -1,7 +1,8 @@
 /* MUST HAVE THIS FUNCTION
 - allergyReaction
-- strDatetimeToEn
+- checkToBc
 */
+TRUNCATE TABLE `client_allergyintolerance`;
 INSERT INTO `client_allergyintolerance` (`source_id`, `id`, `patient_cid`, `encounter_id`, `clinical_status`, `verification_status`, `type`, `category`, `criticality`, `code_display`,`code_code`,`code_system`,`onset_date_time`,`recorded_date`,`reaction_display`,`reaction_code`,`reaction_system`,`reaction_severity`,`note`,`note_date_time`,`deleted`,`last_update_date_time`) 
 SELECT '001151200' AS `source_id`,
 a.`row_id` AS `id`,
@@ -17,11 +18,20 @@ END) AS `verification_status`,
 'allergy' AS `type`,
 'medication' AS `category`,
 IF(a.`advreact`!='','high','low' ) AS `criticality`,
-CONCAT(a.`tradname`, a.`genname`) AS `code_display`,
-c.`tmt` AS `code_code`,
-c.`tmt` AS `code_sytem`,
+(CASE
+	WHEN c.`genname` IS NOT NULL THEN c.`genname`
+	WHEN c.`genname` IS NULL THEN a.`tradname`
+END) AS `code_display`,
+(CASE
+	WHEN c.`tmt` IS NOT NULL THEN c.`tmt`
+	WHEN c.`tmt` IS NULL THEN a.`tradname`
+END) AS `code_code`,
+(CASE
+	WHEN c.`tmt` IS NOT NULL THEN c.`tmt`
+	WHEN c.`tmt` IS NULL THEN a.`tradname`
+END) AS `code_sytem`,
 '' AS `onset_date_time`,
-DATE_FORMAT(strDatetimeToEn(a.`date`), '%Y-%m-%dT%TZ') AS `recorded_date`,
+checkToBc(a.`date`) AS `recorded_date`,
 allergyReaction(a.`advreact`) AS `reaction_display`,
 allergyReaction(a.`advreact`) AS `reaction_code`,
 allergyReaction(a.`advreact`) AS `reaction_system`,
@@ -29,8 +39,10 @@ allergyReaction(a.`advreact`) AS `reaction_system`,
 '' AS `note`,
 '' AS `note_date_time`,
 0 AS `deleted`,
-DATE_FORMAT(strDatetimeToEn(a.`date`), '%Y-%m-%dT%TZ') AS `last_update_date_time`
+checkToBc(a.`date`) AS `last_update_date_time`
 FROM `drugreact` AS a 
 LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn` 
-LEFT JOIN `druglst` AS c ON c.`drugcode` = a.`drugcode`
+LEFT JOIN `druglst` AS c ON c.`drugcode` = a.`drugcode` 
+WHERE (b.`idcard` <> '' AND b.`idcard` != '-') 
+AND a.`advreact` != ''  
 ORDER BY a.`row_id` ASC
