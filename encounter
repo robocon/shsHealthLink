@@ -1,3 +1,4 @@
+TRUNCATE TABLE `client_encounter`;
 INSERT INTO `client_encounter` (`source_id`, `id`, `patient_cid`, `status`, `class`, `type_display`, `type_code`, `type_system`, `service_type_display`, `service_type_code`, `service_type_system`, `period_start`, `period_end`, `reason_display`, `reason_code`, `reason_system`, `service_provider`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS `source_id`,
@@ -20,3 +21,5 @@ IF(a.`icd10`!='', a.`icd10`, a.`diag`) AS 'reason_system',
 0 AS 'deleted',
 strDatetimeToen(a.`thidate`) AS 'last_update_date_time'
 FROM `opday` AS a 
+WHERE `icd10` != ''
+AND ( `idcard` != '' AND `idcard` != '-' )
