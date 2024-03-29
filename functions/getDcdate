@@ -1,4 +1,4 @@
-CREATE DEFINER = `root`@`localhost` FUNCTION `NewProc`(`myAn` varchar(25))
+CREATE DEFINER = `root`@`localhost` FUNCTION `getDcdate`(`myAn` varchar(25))
  RETURNS varchar(255)
     READS SQL DATA
 BEGIN

@@ -1,0 +1,9 @@
+CREATE DEFINER = `root`@`localhost` FUNCTION `getBed`(`myAn` varchar(25))
+ RETURNS varchar(255)
+    READS SQL DATA
+BEGIN
+	DECLARE resId VARCHAR(255);
+	SELECT row_id INTO resId FROM bed WHERE an = myAn;
+	RETURN resId;
+END;
+

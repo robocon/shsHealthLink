@@ -1,14 +1,10 @@
-SELECT a.row_id,
+INSERT INTO `client_encounter` (`source_id`, `id`, `patient_cid`, `status`, `class`, `type_display`, `type_code`, `type_system`, `service_type_display`, `service_type_code`, `service_type_system`, `period_start`, `period_end`, `reason_display`, `reason_code`, `reason_system`, `service_provider`, `deleted`, `last_update_date_time`) 
+SELECT 
 '001151200' AS `source_id`,
 a.`row_id` AS `id`,
 TRIM(a.`idcard`) AS `patient_cid`,
-
-(CASE
-WHEN a.`an` != '' THEN IF(getIpcard(a.`an`)='0000-00-00 00:00:00','in-progress','finished') 
-ELSE 'finished'
-END) AS 'status',
-
-'' AS 'class',
+IF(a.`an` ='' , 'finished', IF(getBed(a.`an`) IS NOT NULL,'in-progress','finished') ) AS 'status',
+IF(a.`an` !='' , 'IMP', IF(SUBSTRING(a.`toborow`,1,4)='EX02', 'EMER', 'AMB') ) AS 'class',
 '' AS 'type_display',
 '' AS 'type_code',
 '' AS 'type_system',
@@ -16,13 +12,11 @@ END) AS 'status',
 '' AS 'service_type_code',
 '' AS 'service_type_system',
 strDatetimeToen(a.`thidate`) AS 'period_start',
-'' AS 'period_end',
-'' AS 'reason_display',
-'' AS 'reason_code',
-'' AS 'reason_system',
+IF(a.an !='' , strDatetimeToen(getDcdate(a.`an`)), '' ) AS 'period_end',
+a.`diag` AS 'reason_display',
+IF(a.`icd10`!='', a.`icd10`, a.`diag`) AS 'reason_code',
+IF(a.`icd10`!='', a.`icd10`, a.`diag`) AS 'reason_system',
 '001151200' AS 'service_provider',
 0 AS 'deleted',
 strDatetimeToen(a.`thidate`) AS 'last_update_date_time'
 FROM `opday` AS a 
-LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn` 
-WHERE (b.`idcard` <> '' AND b.`idcard` != '-') 
