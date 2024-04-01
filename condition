@@ -1,25 +1,42 @@
+TRUNCATE TABLE `client_condition`;
 SELECT 
-'001151200' AS `source_id`,
-a.row_id AS `id`,
-b.idcard AS `patient_cid`,
-'' AS `encounter_id`,
-'' AS `clinical_status`,
-'' AS `verification_status`,
-'' AS `category`,
-'' AS `severity`,
-'' AS `code_display`,
-'' AS `code_code`,
-'' AS `code_system`,
-'' AS `body_site_display`,
-'' AS `body_site_code`,
-'' AS `recorded_date`,
-'' AS `note`,
-'' AS `note_date_time`,
-'' AS `diagnosis_display`,
-'' AS `diagnosis_code`,
-'' AS `diagnosis_system`,
-'' AS `diagnosis_rank`,
-'' AS `deleted`,
-'' AS `last_update_date_time` 
-FROM `diag` AS a 
-LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn`
+'001151200' AS 'source_id',
+a.`row_id` AS 'id',
+b.`idcard` AS 'patient_cid',
+#getRowidOpday(CONCAT(SUBSTRING(a.`svdate`,9,2),'-',SUBSTRING(a.`svdate`,6,2),'-',(SUBSTRING(a.`svdate`,1,4)),a.`an`)) AS 'encounter_id',
+c.`row_id` AS 'encounter_id',
+checkChronic(a.`icd10`) AS 'clinical_status',
+'confirmed' AS 'verification_status',
+'encounter-diagnosis' AS 'category',
+'' AS 'severity',
+a.`diag` AS 'code_display',
+IF(a.`icd10`='', a.`diag`, a.`icd10`) AS 'code_code',
+IF(a.`icd10`='', a.`diag`, a.`icd10`) AS 'code_system',
+'' AS 'body_site_display',
+'' AS 'body_site_code',
+strDatetimeToEn(a.`svdate`) AS 'recorded_date',
+'' AS 'note',
+'' AS 'note_date_time',
+'xx' AS 'diagnosis_display',
+'xx' AS 'diagnosis_code',
+'xx' AS 'diagnosis_system',
+'xx' AS 'diagnosis_rank',
+0 AS 'deleted',
+strDatetimeToEn(a.`regisdate`) AS 'last_update_date_time' 
+FROM ( 
+	SELECT `row_id`,`hn`,`an`,`icd10`,`diag`,`svdate`,`regisdate`,`svdate_en`,CONCAT(SUBSTRING(`svdate`,9,2),'-',SUBSTRING(`svdate`,6,2),'-',(SUBSTRING(`svdate`,1,4)),`an`) AS `thdatevn`
+	FROM `diag` 
+	WHERE `svdate_en` >= '2019-01-01' 
+	AND `status` = 'Y' 
+	AND `icd10` != '' 
+) AS a 
+LEFT JOIN (
+	SELECT `idcard`,`hn` FROM `opcard` WHERE `idcard` <> '' AND `idcard` != '0' AND `idcard` NOT LIKE '-%' AND `idcard` NOT LIKE '.%'
+) AS b ON b.`hn` = a.`hn` 
+LEFT JOIN (
+	SELECT `row_id`,`thdatevn` 
+	FROM `opday`
+	WHERE `thidate` >= '2562-01-01 00:00:00' 
+	AND `icd10` != ''
+	AND ( `idcard` != '' AND `idcard` != '-' )
+) AS c ON c.thdatevn = a.thdatevn
