@@ -1,10 +1,19 @@
+CREATE TEMPORARY TABLE tmp_diag 
+SELECT `row_id`,`hn`,`an`,`icd10`,`diag`,`regisdate`,`svdate_en`,
+IF(svdate='', getThidateFromAn(`an`), `svdate` ) AS `svdate`,
+IF(svdate='', getThdatehnFromAn(`an`), CONCAT(SUBSTRING(`svdate`,9,2),'-',SUBSTRING(`svdate`,6,2),'-',(SUBSTRING(`svdate`,1,4)),`hn`) ) AS `thdatehn` 
+FROM `diag` 
+WHERE `svdate_en` >= '2019-01-01' 
+AND `hn` != '' 
+AND `icd10` != '';
+
 TRUNCATE TABLE `client_condition`;
 INSERT INTO `client_condition` (`source_id`, `id`, `patient_cid`, `encounter_id`, `clinical_status`, `verification_status`, `category`, `severity`, `code_display`, `code_code`, `code_system`, `body_site_display`, `body_site_code`, `recorded_date`, `note`, `note_date_time`, `diagnosis_display`, `diagnosis_code`, `diagnosis_system`, `diagnosis_rank`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS 'source_id',
 a.`row_id` AS 'id',
-IF(c.`idcard` IS NULL, getCidFromAn(a.an), TRIM(c.`idcard`)) AS 'patient_cid',
-IF(c.`row_id` IS NULL, getEncounterIdFromAn(a.an), c.`row_id`) AS 'encounter_id',
+c.`idcard` AS 'patient_cid',
+c.`row_id` AS 'encounter_id',
 checkChronic(a.`icd10`) AS 'clinical_status',
 'confirmed' AS 'verification_status',
 'encounter-diagnosis' AS 'category',
@@ -23,16 +32,11 @@ IF(a.`svdate`='', strDatetimeToEn(a.`regisdate`), strDatetimeToEn(a.`svdate`)) A
 '1' AS 'diagnosis_rank',
 0 AS 'deleted',
 IF(a.`svdate`='', strDatetimeToEn(a.`regisdate`), strDatetimeToEn(a.`svdate`)) AS 'last_update_date_time' 
-FROM ( 
-	SELECT `row_id`,`hn`,`an`,`icd10`,`diag`,`svdate`,`regisdate`,`svdate_en`,CONCAT(SUBSTRING(`svdate`,9,2),'-',SUBSTRING(`svdate`,6,2),'-',(SUBSTRING(`svdate`,1,4)),`an`) AS `thdatevn`
-	FROM `diag` 
-	WHERE `svdate_en` >= '2019-01-01' 
-	AND `icd10` != '' 
-) AS a 
+FROM tmp_diag AS a
 LEFT JOIN (
-	SELECT `row_id`,`thdatevn`,`thdatehn`,`idcard`
+	SELECT `row_id`,`thdatehn`,`thdatevn`,`icd10`,
+	IF(`idcard`='', getIdcardFromOpcard(`hn`), `idcard`) AS `idcard`
 	FROM `opday`
 	WHERE `thidate` >= '2562-01-01 00:00:00' 
-	AND `icd10` != ''
-	AND ( `idcard` != '' AND `idcard` != '-' )
-) AS c ON c.`thdatevn` = a.`thdatevn`;
+) AS c ON a.`thdatehn` = c.`thdatehn` 
+WHERE c.`idcard` != '' ;
