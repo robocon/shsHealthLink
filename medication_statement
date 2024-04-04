@@ -1,0 +1,40 @@
+SELECT x.hn,x.an,x.drugcode,
+'001151200' AS `source_id`,
+x.row_id AS `id`,
+getIdcardFromOpcard(x.hn) AS `patient_cid`,
+IF(
+	x.an IS NOT NULL, 
+	getRowidFromAn(x.`an`), 
+	getRowidThdatehnOpday(x.date, x.hn)
+) AS `encounter_id`,
+IF(x.an IS NOT NULL ,'completed','active') AS `status`,
+CONCAT(y.strength,' ',x.amount,' ',y.unit) AS `extension_string`,
+IF(y.strength='', CONCAT(x.amount,' ',y.unit), y.strength) AS `extension_drug_strength`,
+x.amount AS `extension_drug_qty`,
+y.unit AS `extension_drug_unit`,
+y.genname AS `medication_diaplay`,
+IF(y.tmt='',y.genname,y.tmt) AS `medication_code`,
+IF(y.tmt='',y.genname,y.tmt) AS `medication_system`,
+x.date AS `effective_date_time`,
+'' AS `effective_period_start`,
+'' AS `effective_period_end`,
+'001151200' AS `information_source`,
+'' AS `note`,
+'' AS `note_date_time`,
+'' AS `dosage_text`,
+'' AS `dosage_timing_frequency`,
+'' AS `dosage_timing_period`,
+'' AS `dosage_timing_unit`,
+'' AS `dosage_qty`,
+'' AS `dosage_unit`,
+'' AS `dosage_as_needed_boolean`,
+0 AS `deleted`,
+x.date AS last_update_date_time
+
+FROM drugrx AS x 
+LEFT JOIN druglst AS y ON x.drugcode = y.drugcode  
+WHERE x.date >= '2562-01-01 00:00:00' 
+AND x.`status`='Y' AND x.amount>0
+AND x.hn != '' 
+AND SUBSTRING(x.an,1,2) >= 62
+ORDER BY x.an ASC;
