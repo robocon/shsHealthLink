@@ -1,0 +1,40 @@
+SELECT a.`autonumber`,a.`hn`,a.`profilecode`,
+'001151200' AS `source_id`,
+a.autonumber AS `id`,
+b.`idcard` AS `patient_cid`,
+b.`row_id` AS `encounter_id`,
+'final' AS `status`,
+a.`testgroupname` AS `category_display`,
+a.`testgroupname` AS `category_code`,
+'hospital' AS `category_system`,
+c.`detail` AS `code_display`,
+c.`detail` AS `code_code`,
+c.`detail` AS `code_system`,
+a.`orderdate` AS `effective_date_time`,
+'' AS `effective_period_start`,
+'' AS `effective_period_end`,
+'001151200' AS `performer`,
+'' AS `results_interpreter`,
+'' AS `conclusion`,
+'' AS `conclusion_display`,
+'' AS `conclusion_code`,
+0 AS `deleted`,
+a.`orderdate` AS `last_update_date_time`
+FROM ( 
+	SELECT `autonumber`,`orderdate`,`hn`,`profilecode`,`testgroupname`,
+	CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
+	FROM `resulthead` 
+	WHERE `orderdate` >= '2019-01-01 00:00:00' 
+	AND `priority` != ''
+) AS a 
+LEFT JOIN ( 
+	SELECT row_id,TRIM(`idcard`) AS `idcard`,`hn`,`thdatehn` 
+	FROM `opday` WHERE 
+	`thidate` >= '2562-01-01 00:00:00' 
+	AND `idcard` != '' 
+	ORDER BY `row_id` ASC
+) AS b ON a.`thdatehn` = b.`thdatehn` 
+LEFT JOIN ( 
+	SELECT `code`,`detail`,`codelab` FROM `labcare` WHERE `codelab` != '' 
+) AS c ON a.`profilecode` = c.`codelab`
+WHERE b.`row_id` IS NOT NULL
