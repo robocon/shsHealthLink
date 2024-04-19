@@ -1,0 +1,10 @@
+CREATE DEFINER = `root`@`localhost` FUNCTION `getEncounterIdFromAn`(`setAn` varchar(50))
+ RETURNS varchar(50)
+    READS SQL DATA
+BEGIN
+	DECLARE setRowId VARCHAR(25);
+	SET setRowId = '';
+	SELECT row_id INTO setRowId FROM `opday` WHERE an = setAn;
+	RETURN setRowId;
+END;
+

@@ -1,0 +1,10 @@
+CREATE DEFINER = `root`@`localhost` FUNCTION `getCidFromAn`(`setAn` varchar(50))
+ RETURNS varchar(50)
+    READS SQL DATA
+BEGIN
+	DECLARE setCid VARCHAR(25);
+	SET setCid = '';
+	SELECT b.`idcard` INTO setCid FROM ( SELECT `hn` FROM `opday` WHERE `an` = setAn) AS a LEFT JOIN `opcard` AS b ON a.`hn` = b.`hn`;
+	RETURN setCid;
+END;
+

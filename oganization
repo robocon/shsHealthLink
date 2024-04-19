@@ -1,0 +1,2 @@
+TRUNCATE TABLE `client_organization`;
+INSERT INTO `client_organization` (`id`, `name`, `hospital_website`) VALUES ('001151200', 'โรงพยาบาลค่ายสรุศักดิ์มนตรี', 'https://surasakhospital.mi.th/');

@@ -1,9 +1,17 @@
+/*
+getCidFromAn
+getEncounterIdFromAn
+checkChronic
+*/
 TRUNCATE TABLE `client_condition`;
 INSERT INTO `client_condition` (`source_id`, `id`, `patient_cid`, `encounter_id`, `clinical_status`, `verification_status`, `category`, `severity`, `code_display`, `code_code`, `code_system`, `body_site_display`, `body_site_code`, `recorded_date`, `note`, `note_date_time`, `diagnosis_display`, `diagnosis_code`, `diagnosis_system`, `diagnosis_rank`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS 'source_id',
 a.`row_id` AS 'id',
-IF(c.`idcard` IS NULL, getCidFromAn(a.an), TRIM(c.`idcard`)) AS 'patient_cid',
+(CASE
+	WHEN (a.`an` REGEXP '/')=1 THEN getCidFromAn(a.an)
+	ELSE TRIM(c.`idcard`)
+END) AS 'patient_cid',
 IF(c.`row_id` IS NULL, getEncounterIdFromAn(a.an), c.`row_id`) AS 'encounter_id',
 checkChronic(a.`icd10`) AS 'clinical_status',
 'confirmed' AS 'verification_status',
@@ -17,22 +25,31 @@ IF(a.`icd10`='', a.`diag`, a.`icd10`) AS 'code_system',
 IF(a.`svdate`='', strDatetimeToEn(a.`regisdate`), strDatetimeToEn(a.`svdate`)) AS 'recorded_date',
 '' AS 'note',
 '' AS 'note_date_time',
-'Discharge diagnosis' AS 'diagnosis_display',
-'' AS 'diagnosis_code',
-'' AS 'diagnosis_system',
+(CASE
+	WHEN (`an` REGEXP '/')=0 THEN 
+		CASE 
+			WHEN `type` = 'PRINCIPLE' THEN 'Chief complaint' 
+			ELSE 'Comorbidity diagnosis'
+		END
+	ELSE 'Discharge diagnosis'
+END) AS 'diagnosis_display',
+a.`an` REGEXP '/' AS 'test',
+'Discharge diagnosis' AS 'diagnosis_code',
+'Discharge diagnosis' AS 'diagnosis_system',
 '1' AS 'diagnosis_rank',
 0 AS 'deleted',
 IF(a.`svdate`='', strDatetimeToEn(a.`regisdate`), strDatetimeToEn(a.`svdate`)) AS 'last_update_date_time' 
 FROM ( 
-	SELECT `row_id`,`hn`,`an`,`icd10`,`diag`,`svdate`,`regisdate`,`svdate_en`,CONCAT(SUBSTRING(`svdate`,9,2),'-',SUBSTRING(`svdate`,6,2),'-',(SUBSTRING(`svdate`,1,4)),`an`) AS `thdatevn`
+	SELECT `row_id`,`regisdate`,`hn`,`an`,`icd10`,`type`,`diag`,`svdate`,`svdate_en`,CONCAT(SUBSTRING(`svdate`,9,2),'-',SUBSTRING(`svdate`,6,2),'-',(SUBSTRING(`svdate`,1,4)),`an`) AS 'thdatevn'
 	FROM `diag` 
 	WHERE `svdate_en` >= '2019-01-01' 
-	AND `icd10` != '' 
+	AND TRIM(`icd10`) != '' 
 ) AS a 
 LEFT JOIN (
-	SELECT `row_id`,`thdatevn`,`thdatehn`,`idcard`
+	SELECT `row_id`,`thdatevn`,`thdatehn`,TRIM(`idcard`) AS `idcard`
 	FROM `opday`
 	WHERE `thidate` >= '2562-01-01 00:00:00' 
 	AND `icd10` != ''
-	AND ( `idcard` != '' AND `idcard` != '-' )
-) AS c ON c.`thdatevn` = a.`thdatevn`;
+	AND TRIM(`idcard`) != '-'
+	AND TRIM(`idcard`) != ''
+) AS c ON c.`thdatevn` = a.`thdatevn`

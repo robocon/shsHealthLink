@@ -15,7 +15,7 @@ strDatetimeToEn(a.`date`) AS 'occurrence_date_time',
 '001151200' AS 'performer',
 '' AS 'note',
 '' AS 'note_date_time',
-false AS 'deleted',
+0 AS 'deleted',
 strDatetimeToEn(a.`date`) AS 'last_update_date_time' 
 FROM (
 	SELECT `row_id`,`date`,`hn`,`drugcode`,`tradname` 

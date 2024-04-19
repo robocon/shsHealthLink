@@ -1,3 +1,7 @@
+/*
+- getBed
+- strDatetimeToEn
+*/
 TRUNCATE TABLE `client_encounter`;
 INSERT INTO `client_encounter` (`source_id`, `id`, `patient_cid`, `status`, `class`, `type_display`, `type_code`, `type_system`, `service_type_display`, `service_type_code`, `service_type_system`, `period_start`, `period_end`, `reason_display`, `reason_code`, `reason_system`, `service_provider`, `deleted`, `last_update_date_time`) 
 SELECT 
@@ -12,14 +16,14 @@ IF(a.`an` !='' , 'IMP', IF(SUBSTRING(a.`toborow`,1,4)='EX02', 'EMER', 'AMB') ) A
 '' AS 'service_type_display',
 '' AS 'service_type_code',
 '' AS 'service_type_system',
-strDatetimeToen(a.`thidate`) AS 'period_start',
-IF(a.an !='' , strDatetimeToen(getDcdate(a.`an`)), '' ) AS 'period_end',
+strDatetimeToEn(a.`thidate`) AS 'period_start',
+IF(a.an !='' , strDatetimeToEn(getDcdate(a.`an`)), '' ) AS 'period_end',
 a.`diag` AS 'reason_display',
 IF(a.`icd10`!='', a.`icd10`, a.`diag`) AS 'reason_code',
 IF(a.`icd10`!='', a.`icd10`, a.`diag`) AS 'reason_system',
 '001151200' AS 'service_provider',
 0 AS 'deleted',
-strDatetimeToen(a.`thidate`) AS 'last_update_date_time'
+strDatetimeToEn(a.`thidate`) AS 'last_update_date_time'
 FROM `opday` AS a 
 WHERE `icd10` != ''
 AND ( `idcard` != '' AND `idcard` != '-' )
