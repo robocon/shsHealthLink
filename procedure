@@ -1,4 +1,4 @@
-SELECT m.*,n.`detail`,
+SELECT 
 '001151200' AS `source_id`,
 m.`row_id` AS `id`,
 y.`idcard` AS `patient_cid`,
