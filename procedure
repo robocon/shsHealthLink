@@ -1,42 +1,41 @@
-CREATE TEMPORARY TABLE tmp_diag 
-SELECT `row_id`,`hn`,`an`,`icd10`,`diag`,`regisdate`,`svdate_en`,
-IF(svdate='', getThidateFromAn(`an`), `svdate` ) AS `svdate`,
-IF(svdate='', getThdatehnFromAn(`an`), CONCAT(SUBSTRING(`svdate`,9,2),'-',SUBSTRING(`svdate`,6,2),'-',(SUBSTRING(`svdate`,1,4)),`hn`) ) AS `thdatehn` 
-FROM `diag` 
-WHERE `svdate_en` >= '2019-01-01' 
-AND `hn` != '' 
-AND `icd10` != '';
+SELECT m.*,n.`detail`,
+'001151200' AS `source_id`,
+m.`row_id` AS `id`,
+y.`idcard` AS `patient_cid`,
+y.`encounter_id` AS `encounter_id`,
+'completed' AS `status`,
+'' AS `category_display`,
+'' AS `category_code`,
+n.`detail` AS `code_display`,
+m.`code` AS `code_code`,
+'icd9-cm' AS `code_system`,
+m.admdate AS `performed_date_time`,
+'001151200' AS `performer`,
+'' AS `reason_display`,
+'' AS `reason_code`,
+'' AS `reason_system`,
+'' AS `body_site_display`,
+'' AS `body_site_code`,
+'' AS `outcome_display`,
+'' AS `outcome_code`,
+'' AS `note`,
+'' AS `note_date_time`,
+0 AS `deleted`,
+m.admdate AS `last_update_date_time`
+ FROM(
+	SELECT CONCAT(a.`row_id`,'IPD') AS `row_id`,strDatetimeToEn(a.`admdate`) AS `admdate`,a.`icd9cm` AS `code`,CONCAT(SUBSTRING(`admdate`,9,2),'-',SUBSTRING(`admdate`,6,2),'-',(SUBSTRING(`admdate`,1,4)),`hn`) AS `thdatehn`,'ipd' AS 'pt'
+	FROM `ipicd9cm` AS a 
+	LEFT JOIN `ipcard` AS b ON a.`an` = b.`an` 
+	WHERE a.`icd9cm` <> '' 
 
-TRUNCATE TABLE `client_condition`;
-INSERT INTO `client_condition` (`source_id`, `id`, `patient_cid`, `encounter_id`, `clinical_status`, `verification_status`, `category`, `severity`, `code_display`, `code_code`, `code_system`, `body_site_display`, `body_site_code`, `recorded_date`, `note`, `note_date_time`, `diagnosis_display`, `diagnosis_code`, `diagnosis_system`, `diagnosis_rank`, `deleted`, `last_update_date_time`) 
-SELECT 
-'001151200' AS 'source_id',
-a.`row_id` AS 'id',
-c.`idcard` AS 'patient_cid',
-c.`row_id` AS 'encounter_id',
-checkChronic(a.`icd10`) AS 'clinical_status',
-'confirmed' AS 'verification_status',
-'encounter-diagnosis' AS 'category',
-'' AS 'severity',
-a.`diag` AS 'code_display',
-IF(a.`icd10`='', a.`diag`, a.`icd10`) AS 'code_code',
-IF(a.`icd10`='', a.`diag`, a.`icd10`) AS 'code_system',
-'' AS 'body_site_display',
-'' AS 'body_site_code',
-IF(a.`svdate`='', strDatetimeToEn(a.`regisdate`), strDatetimeToEn(a.`svdate`)) AS 'recorded_date',
-'' AS 'note',
-'' AS 'note_date_time',
-'Discharge diagnosis' AS 'diagnosis_display',
-'' AS 'diagnosis_code',
-'' AS 'diagnosis_system',
-'1' AS 'diagnosis_rank',
-0 AS 'deleted',
-IF(a.`svdate`='', strDatetimeToEn(a.`regisdate`), strDatetimeToEn(a.`svdate`)) AS 'last_update_date_time' 
-FROM tmp_diag AS a
+	UNION
+
+	SELECT CONCAT(a.`row_id`,'OPD') AS `row_id`,strDatetimeToEn(a.`admdate`) AS `admdate`,a.`icd9cm` AS `code`,CONCAT(SUBSTRING(a.`svdate`,9,2),'-',SUBSTRING(a.`svdate`,6,2),'-',(SUBSTRING(a.`svdate`,1,4)),a.`hn`) AS `thdatehn`,'opd' AS 'pt'
+	FROM `opicd9cm` AS a
+	WHERE a.`icd9cm` <> ''
+) AS m 
+LEFT JOIN `icd9cm` AS n ON m.`code` = n.`code` 
 LEFT JOIN (
-	SELECT `row_id`,`thdatehn`,`thdatevn`,`icd10`,
-	IF(`idcard`='', getIdcardFromOpcard(`hn`), `idcard`) AS `idcard`
-	FROM `opday`
-	WHERE `thidate` >= '2562-01-01 00:00:00' 
-) AS c ON a.`thdatehn` = c.`thdatehn` 
-WHERE c.`idcard` != '' ;
+	SELECT `row_id` AS `encounter_id`,`hn`,`vn`,`thdatehn`,TRIM(`idcard`) AS `idcard` FROM `opday` WHERE `thidate` >= '2561-12-01 00:00:00' AND ( TRIM(`idcard`) <> '' AND TRIM(`idcard`) != '-' )
+) AS y ON m.`thdatehn` = y.`thdatehn` 
+WHERE TRIM(y.idcard) <> '' 
