@@ -11,14 +11,14 @@ SELECT x.hn,x.an,
 '001151200' AS `source_id`,
 x.row_id AS `id`,
 z.idcard AS `patient_cid`,
-/*
+
 IF(
 	x.an IS NOT NULL, 
 	getRowidFromAn(x.`an`), 
 	getRowidThdatehnOpday(x.date, x.hn)
 ) AS `encounter_id`,
 IF(x.an IS NOT NULL ,'completed','active') AS `status`,
-*/
+
 CONCAT(x.strength,' ',x.amount,' ',x.unit) AS `extension_string`,
 IF(x.strength='', CONCAT(x.amount,' ',x.unit), x.strength) AS `extension_drug_strength`,
 x.amount AS `extension_drug_qty`,

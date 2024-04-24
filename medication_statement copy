@@ -1,0 +1,83 @@
+/*
+DROP TEMPORARY TABLE IF EXISTS tmp_opcard ;
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_opcard(
+	hn VARCHAR(100) NOT NULL,
+	idcard VARCHAR(100) NOT NULL,
+	KEY hn (hn)
+);
+INSERT INTO tmp_opcard 
+SELECT TRIM(`hn`) AS `hn`,TRIM(`idcard`) AS `idcard` FROM `opcard` WHERE TRIM(`idcard`) <> '' AND TRIM(`idcard`) != '-' ;
+*/
+
+DROP TEMPORARY TABLE IF EXISTS `tmp_opday` ;
+CREATE TEMPORARY TABLE IF NOT EXISTS `tmp_opday`( 
+	`row_id` INT(11) PRIMARY KEY,
+	`thdatehn` VARCHAR(100) NOT NULL,
+	`hn` VARCHAR(100) NOT NULL,
+	`an` VARCHAR(100) NULL,
+	`idcard` VARCHAR(100) NULL,
+	`the_key` VARCHAR(100) NULL,
+	KEY `the_key` (`the_key`)
+);
+INSERT INTO `tmp_opday`
+SELECT `row_id`,`thdatehn`,`hn`,`an`,`idcard`,CONCAT(`thdatehn`,COALESCE(`an`,'')) AS `the_key` FROM `opday` WHERE `thidate` >= '2566-12-01 00:00:00' AND `hn` <> '' AND ( TRIM(`idcard`) <> '' AND TRIM(`idcard`) != '-' ) ;
+
+
+SELECT x.`an`,x.`hn`,x.`thdatehn`,y.`the_key`,
+'001151200' AS `source_id`,
+x.`row_id` AS `id`,
+#z.`idcard` AS `patient_cid`,
+/*(CASE
+	WHEN x.an <> '' THEN 
+		#getRowidFromAn(x.an)
+		''
+	ELSE 
+		#getRowidThdatehnOpdayV2(x.thdatehn)
+		''
+END) AS `encounter_id`,
+*/
+/*
+IF(
+	x.an IS NOT NULL, 
+	getRowidFromAn(x.`an`), 
+	getRowidThdatehnOpday(x.date, x.hn)
+) AS `encounter_id`,
+IF(x.an IS NOT NULL ,'completed','active') AS `status`,
+*/
+'completed' AS `status`,
+CONCAT(x.`strength`,' ',x.`amount`,' ',x.`unit`) AS `extension_string`,
+IF(x.`strength`='', CONCAT(x.`amount`,' ',x.`unit`), x.`strength`) AS `extension_drug_strength`,
+x.`amount` AS `extension_drug_qty`,
+x.`unit` AS `extension_drug_unit`,
+x.`genname` AS `medication_diaplay`,
+IF(x.`tmt`='',x.`genname`,x.`tmt`) AS `medication_code`,
+IF(x.`tmt`='',x.`genname`,'tmt-tpu') AS `medication_system`,
+x.`date` AS `effective_date_time`,
+'' AS `effective_period_start`,
+'' AS `effective_period_end`,
+'001151200' AS `information_source`,
+'' AS `note`,
+'' AS `note_date_time`,
+'' AS `dosage_text`,
+'' AS `dosage_timing_frequency`,
+'' AS `dosage_timing_period`,
+'' AS `dosage_timing_unit`,
+'' AS `dosage_qty`,
+'' AS `dosage_unit`,
+'' AS `dosage_as_needed_boolean`,
+0 AS `deleted`,
+x.`date` AS last_update_date_time
+FROM (
+
+	SELECT a.`row_id`,a.`drugcode`,a.`hn`,a.`an`,strDatetimeToEn(a.`date`) AS `date`,a.`amount`,b.`strength`,b.`unit`,b.`genname`,TRIM(b.`tmt`) AS `tmt`,
+	CONCAT(SUBSTRING(a.`date`,9,2),'-',SUBSTRING(a.`date`,6,2),'-',(SUBSTRING(a.`date`,1,4)),a.`hn`,COALESCE(a.`an`,'')) AS `the_key`
+	FROM `drugrx` AS a
+	LEFT JOIN `druglst` AS b ON a.`drugcode` = b.`drugcode`
+	WHERE a.`date` >= '2567-01-01 00:00:00'
+	AND (a.`status`='Y' AND a.`amount`>0 )
+	AND a.`drugcode` != 'OLD'
+	AND a.`hn` <> ''
+	ORDER BY a.`row_id`
+
+) AS x
+LEFT JOIN `tmp_opday` AS y ON x.`the_key` = y.`the_key`
