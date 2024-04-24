@@ -1,20 +1,31 @@
-SELECT x.hn,x.an,x.drugcode,
+DROP TEMPORARY TABLE IF EXISTS tmp_opcard ;
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_opcard(
+	hn VARCHAR(100) NOT NULL,
+	idcard VARCHAR(100) NOT NULL,
+	KEY hn (hn)
+);
+INSERT INTO tmp_opcard 
+SELECT TRIM(`hn`) AS `hn`,TRIM(`idcard`) AS `idcard` FROM `opcard` WHERE TRIM(`idcard`) <> '' AND TRIM(`idcard`) != '-' ;
+
+SELECT x.hn,x.an,
 '001151200' AS `source_id`,
 x.row_id AS `id`,
-getIdcardFromOpcard(x.hn) AS `patient_cid`,
+z.idcard AS `patient_cid`,
+/*
 IF(
 	x.an IS NOT NULL, 
 	getRowidFromAn(x.`an`), 
 	getRowidThdatehnOpday(x.date, x.hn)
 ) AS `encounter_id`,
 IF(x.an IS NOT NULL ,'completed','active') AS `status`,
-CONCAT(y.strength,' ',x.amount,' ',y.unit) AS `extension_string`,
-IF(y.strength='', CONCAT(x.amount,' ',y.unit), y.strength) AS `extension_drug_strength`,
+*/
+CONCAT(x.strength,' ',x.amount,' ',x.unit) AS `extension_string`,
+IF(x.strength='', CONCAT(x.amount,' ',x.unit), x.strength) AS `extension_drug_strength`,
 x.amount AS `extension_drug_qty`,
-y.unit AS `extension_drug_unit`,
-y.genname AS `medication_diaplay`,
-IF(y.tmt='',y.genname,y.tmt) AS `medication_code`,
-IF(y.tmt='',y.genname,y.tmt) AS `medication_system`,
+x.unit AS `extension_drug_unit`,
+x.genname AS `medication_diaplay`,
+IF(x.tmt='',x.genname,x.tmt) AS `medication_code`,
+IF(x.tmt='',x.genname,'tmt-tpu') AS `medication_system`,
 x.date AS `effective_date_time`,
 '' AS `effective_period_start`,
 '' AS `effective_period_end`,
@@ -30,11 +41,15 @@ x.date AS `effective_date_time`,
 '' AS `dosage_as_needed_boolean`,
 0 AS `deleted`,
 x.date AS last_update_date_time
+FROM ( 
 
-FROM drugrx AS x 
-LEFT JOIN druglst AS y ON x.drugcode = y.drugcode  
-WHERE x.date >= '2562-01-01 00:00:00' 
-AND x.`status`='Y' AND x.amount>0
-AND x.hn != '' 
-AND SUBSTRING(x.an,1,2) >= 62
-ORDER BY x.an ASC;
+	SELECT a.`row_id`,a.`drugcode`,a.`hn`,a.`an`,strDatetimeToEn(a.`date`) AS `date`,a.`amount`,b.`strength`,b.`unit`,b.`genname`,TRIM(b.`tmt`) AS `tmt`
+	FROM `drugrx` AS a 
+	LEFT JOIN `druglst` AS b ON a.`drugcode` = b.`drugcode`
+	WHERE a.date >= '2562-01-01 00:00:00' 
+	AND (a.`status`='Y' AND a.`amount`>0 )
+	AND a.`drugcode` != 'OLD'
+	AND a.`hn` <> ''
+
+) AS x 
+LEFT JOIN tmp_opcard AS z ON x.hn = z.hn 
