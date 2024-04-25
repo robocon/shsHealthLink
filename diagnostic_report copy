@@ -1,0 +1,96 @@
+ไอเดียก็คือ temp table มันช้า งั้นก็ยัดเป็นตารางจริงไปเลยง่ายกว่าโดยที่ยังตั้ง prefix เป็น tmp_ เหมือนเดิม 
+
+DROP TABLE IF EXISTS tmp_opday;
+CREATE TABLE IF NOT EXISTS tmp_opday(
+	`encounter_id` INT(11) PRIMARY KEY,
+	`idcard` VARCHAR(100) NOT NULL,
+	`hn` VARCHAR(100) NOT NULL,
+	`an` VARCHAR(100) NOT NULL,
+	`thdatehn` VARCHAR(100) NOT NULL,
+	KEY thdatehn (thdatehn)
+);
+INSERT INTO tmp_opday 
+SELECT row_id AS encounter_id,TRIM(`idcard`) AS `idcard`,`hn`,`an`,`thdatehn` 
+FROM `opday` WHERE 
+`thidate` >= '2561-12-01 00:00:00' 
+AND TRIM(`idcard`) <> '' AND TRIM(`idcard`) != '-' 
+ORDER BY `encounter_id` ASC;
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS tmp_resulthead;
+CREATE TABLE IF NOT EXISTS tmp_resulthead(
+	`autonumber` INT(11) PRIMARY KEY,
+	`orderdate` VARCHAR(100) NOT NULL,
+	`profilecode` VARCHAR(100) NOT NULL,
+	`testgroupname` VARCHAR(100) NOT NULL,
+	`thdatehn` VARCHAR(100) NOT NULL,
+	KEY thdatehn (thdatehn),
+	KEY profilecode (profilecode)
+);
+INSERT INTO tmp_resulthead 	
+
+SELECT `autonumber`,`orderdate`,`profilecode`,`testgroupname`,
+CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
+FROM `resulthead` 
+WHERE `orderdate` >= '2019-01-01 00:00:00' 
+AND `priority` <> '' AND `testgroupname` <> '' 
+
+
+
+
+
+
+DROP TEMPORARY TABLE IF EXISTS tmp_tmtlab ;
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_tmtlab(
+	LCCode VARCHAR(100) NOT NULL,
+	TMLT VARCHAR(100) NOT NULL,
+	KEY LCCode (LCCode)
+);
+INSERT INTO tmp_tmtlab 
+SELECT TRIM(`LCCode`) AS `LCCode`,TRIM(`TMLT`) AS `TMLT` FROM `tmtlab`;
+
+>>>> มี labpart อีกตัวเอาไว้บอกว่าเป็น Serology Chemistry Serology Heamato ฯลฯ
+DROP TABLE tmp_labcare;
+CREATE TABLE IF NOT EXISTS tmp_labcare(
+	`code` VARCHAR(100) NOT NULL,
+	`detail` VARCHAR(255) NOT NULL,
+	`codelab` VARCHAR(100) NOT NULL,
+	`codex` VARCHAR(100) NOT NULL,
+	`TMLT` VARCHAR(100) NOT NULL,
+	KEY `code` (`code`)
+);
+INSERT INTO tmp_labcare 
+SELECT TRIM(x.`code`),x.`detail`,x.`codelab`,x.`codex`,y.`TMLT` FROM (
+	SELECT `code`,`detail`,`codelab`,`codex` 
+	FROM `labcare` 
+	WHERE `codelab` != '' 
+) AS x 
+LEFT JOIN tmp_tmtlab AS y ON x.codex = y.LCCode;
+
+
+
+
+
+DROP TEMPORARY TABLE IF EXISTS `tmp_orderdetail`;
+CREATE TEMPORARY TABLE IF NOT EXISTS `tmp_orderdetail`(
+	`labnumber` VARCHAR(100) NOT NULL,
+	`labcode1` VARCHAR(100) NOT NULL,
+	`labname` VARCHAR(100) NOT NULL,
+	KEY `labnumber` (`labnumber`)
+);
+INSERT INTO `tmp_orderdetail` 
+SELECT `labnumber`,`labcode1`,`labname` FROM `orderdetail`;
+
+SELECT a.`orderdate`,a.`hn`,b.`labnumber`,b.`labcode1`,b.`labname`,c.`code`,c.`TMLT`
+FROM (
+	SELECT `orderdate`,`hn`,`labnumber`,CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn` FROM `resulthead` WHERE `priority` <> '' AND `testgroupname` <> '' GROUP BY `labnumber`
+) as a 
+LEFT JOIN `tmp_orderdetail` AS b ON a.`labnumber` = b.`labnumber` 
+LEFT JOIN `tmp_labcare` AS c ON b.`labcode1` = c.`codex`
+WHERE b.`labnumber` IS NOT NULL
