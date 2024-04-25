@@ -9,6 +9,8 @@ INSERT INTO tmp_opcard
 SELECT TRIM(`hn`) AS `hn`,TRIM(`idcard`) AS `idcard` FROM `opcard` WHERE TRIM(`idcard`) <> '' AND TRIM(`idcard`) != '-' ;
 */
 
+วิธีนี้ไม่ได้ เพราะสุดท้าย thdatehn + an ก็เอามา map ไมได้อยู่ดี เพราะ thdatehn + an ในตารางของ drugrx ไม่ได้บ่งบอกถึง thdatehn ใน opday
+
 DROP TEMPORARY TABLE IF EXISTS `tmp_opday` ;
 CREATE TEMPORARY TABLE IF NOT EXISTS `tmp_opday`( 
 	`row_id` INT(11) PRIMARY KEY,
