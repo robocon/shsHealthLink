@@ -35,7 +35,5 @@ m.admdate AS `last_update_date_time`
 	WHERE a.`icd9cm` <> ''
 ) AS m 
 LEFT JOIN `icd9cm` AS n ON m.`code` = n.`code` 
-LEFT JOIN (
-	SELECT `row_id` AS `encounter_id`,`hn`,`vn`,`thdatehn`,TRIM(`idcard`) AS `idcard` FROM `opday` WHERE `thidate` >= '2561-12-01 00:00:00' AND ( TRIM(`idcard`) <> '' AND TRIM(`idcard`) != '-' )
-) AS y ON m.`thdatehn` = y.`thdatehn` 
-WHERE TRIM(y.idcard) <> '' 
+LEFT JOIN `tmp_opday` AS y ON m.`thdatehn` = y.`thdatehn` 
+WHERE TRIM(y.`idcard`) <> '' 

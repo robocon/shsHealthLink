@@ -1,5 +1,6 @@
-ไอเดียก็คือ temp table มันช้า งั้นก็ยัดเป็นตารางจริงไปเลยง่ายกว่าโดยที่ยังตั้ง prefix เป็น tmp_ เหมือนเดิม 
-
+/*
+Build ตารางขึ้นมาใหม่ ให้มีข้อมูลน้อยลงจะได้ query ได้ง่ายขึ้น
+*/
 DROP TABLE IF EXISTS tmp_opday;
 CREATE TABLE IF NOT EXISTS tmp_opday(
 	`encounter_id` INT(11) PRIMARY KEY,
@@ -7,7 +8,8 @@ CREATE TABLE IF NOT EXISTS tmp_opday(
 	`hn` VARCHAR(100) NOT NULL,
 	`an` VARCHAR(100) NOT NULL,
 	`thdatehn` VARCHAR(100) NOT NULL,
-	KEY thdatehn (thdatehn)
+	KEY thdatehn (thdatehn),
+	KEY an (an)
 );
 INSERT INTO tmp_opday 
 SELECT row_id AS encounter_id,TRIM(`idcard`) AS `idcard`,`hn`,`an`,`thdatehn` 
@@ -18,79 +20,125 @@ ORDER BY `encounter_id` ASC;
 
 
 
-
-
-
-
-
-DROP TABLE IF EXISTS tmp_resulthead;
-CREATE TABLE IF NOT EXISTS tmp_resulthead(
+DROP TABLE IF EXISTS `tmp_resulthead`;
+CREATE TABLE IF NOT EXISTS `tmp_resulthead`(
 	`autonumber` INT(11) PRIMARY KEY,
+	`labnumber` VARCHAR(100) NOT NULL,
 	`orderdate` VARCHAR(100) NOT NULL,
 	`profilecode` VARCHAR(100) NOT NULL,
 	`testgroupname` VARCHAR(100) NOT NULL,
 	`thdatehn` VARCHAR(100) NOT NULL,
-	KEY thdatehn (thdatehn),
-	KEY profilecode (profilecode)
+	KEY `labnumber` (`labnumber`),
+	KEY `thdatehn` (`thdatehn`)
 );
-INSERT INTO tmp_resulthead 	
-
-SELECT `autonumber`,`orderdate`,`profilecode`,`testgroupname`,
+INSERT INTO `tmp_resulthead` 
+SELECT `autonumber`,`labnumber`,`orderdate`,`profilecode`,`testgroupname`,
 CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
 FROM `resulthead` 
 WHERE `orderdate` >= '2019-01-01 00:00:00' 
-AND `priority` <> '' AND `testgroupname` <> '' 
+AND `priority` <> '' AND `testgroupname` <> '';
 
 
 
 
 
 
-DROP TEMPORARY TABLE IF EXISTS tmp_tmtlab ;
-CREATE TEMPORARY TABLE IF NOT EXISTS tmp_tmtlab(
-	LCCode VARCHAR(100) NOT NULL,
-	TMLT VARCHAR(100) NOT NULL,
-	KEY LCCode (LCCode)
+/*
+tmtlab มันเอามา join ไม่ได้เพราะมีปัญหาเรื่อง collection เลยต้องสร้างเป็น temp 
+*/
+DROP TEMPORARY TABLE IF EXISTS `tmp_tmtlab` ;
+CREATE TEMPORARY TABLE IF NOT EXISTS `tmp_tmtlab`(
+	`LCCode` VARCHAR(100) NOT NULL,
+	`TMLT` VARCHAR(100) NOT NULL,
+	KEY `LCCode` (`LCCode`)
 );
-INSERT INTO tmp_tmtlab 
+INSERT INTO `tmp_tmtlab` 
 SELECT TRIM(`LCCode`) AS `LCCode`,TRIM(`TMLT`) AS `TMLT` FROM `tmtlab`;
 
->>>> มี labpart อีกตัวเอาไว้บอกว่าเป็น Serology Chemistry Serology Heamato ฯลฯ
-DROP TABLE tmp_labcare;
-CREATE TABLE IF NOT EXISTS tmp_labcare(
+/*
+สร้าง labcare ขึ้นมาใหม่ โดยรวมเอา tmtlab เข้ามาเป็น table เดียวกัน
+*/
+DROP TABLE `tmp_labcare`;
+CREATE TABLE IF NOT EXISTS `tmp_labcare`(
 	`code` VARCHAR(100) NOT NULL,
 	`detail` VARCHAR(255) NOT NULL,
 	`codelab` VARCHAR(100) NOT NULL,
 	`codex` VARCHAR(100) NOT NULL,
+	`labpart` VARCHAR(100) NOT NULL,
 	`TMLT` VARCHAR(100) NOT NULL,
 	KEY `code` (`code`)
 );
-INSERT INTO tmp_labcare 
-SELECT TRIM(x.`code`),x.`detail`,x.`codelab`,x.`codex`,y.`TMLT` FROM (
-	SELECT `code`,`detail`,`codelab`,`codex` 
+INSERT INTO `tmp_labcare` 
+SELECT TRIM(x.`code`),x.`detail`,x.`codelab`,x.`codex`,x.`labpart`,y.`TMLT` FROM (
+	SELECT `code`,`detail`,`codelab`,`codex`,`labpart`
 	FROM `labcare` 
 	WHERE `codelab` != '' 
 ) AS x 
-LEFT JOIN tmp_tmtlab AS y ON x.codex = y.LCCode;
+LEFT JOIN `tmp_tmtlab` AS y ON x.`codex` = y.`LCCode`;
 
 
 
 
 
-DROP TEMPORARY TABLE IF EXISTS `tmp_orderdetail`;
-CREATE TEMPORARY TABLE IF NOT EXISTS `tmp_orderdetail`(
+DROP TEMPORARY TABLE IF EXISTS `pre_orderdetail`;
+CREATE TEMPORARY TABLE IF NOT EXISTS `pre_orderdetail`(
 	`labnumber` VARCHAR(100) NOT NULL,
 	`labcode1` VARCHAR(100) NOT NULL,
 	`labname` VARCHAR(100) NOT NULL,
 	KEY `labnumber` (`labnumber`)
 );
-INSERT INTO `tmp_orderdetail` 
-SELECT `labnumber`,`labcode1`,`labname` FROM `orderdetail`;
+INSERT INTO `pre_orderdetail` 
+SELECT `labnumber`,`labcode1`,`labname` FROM `orderdetail` WHERE `labcode` <> '' ;
 
-SELECT a.`orderdate`,a.`hn`,b.`labnumber`,b.`labcode1`,b.`labname`,c.`code`,c.`TMLT`
+
+DROP TABLE IF EXISTS `tmp_orderdetail`;
+CREATE TABLE IF NOT EXISTS `tmp_orderdetail`(
+	`labnumber` VARCHAR(100) NOT NULL,
+	`labcode1` VARCHAR(100) NOT NULL,
+	`labname` VARCHAR(100) NOT NULL,
+	`code` VARCHAR(100) NOT NULL,
+	`detail` VARCHAR(100) NOT NULL,
+	`codelab` VARCHAR(100) NOT NULL,
+	`codex` VARCHAR(100) NOT NULL,
+	`labpart` VARCHAR(100) NOT NULL,
+	`TMLT` VARCHAR(100) NOT NULL,
+	KEY `labnumber` (`labnumber`)
+);
+INSERT INTO `tmp_orderdetail` 
+SELECT a.`labnumber`,a.`labcode1`,a.`labname`,b.`code`,b.`detail`,b.`codelab`,b.`codex`,b.`labpart`,b.`TMLT`
+FROM `pre_orderdetail` AS a 
+LEFT JOIN `tmp_labcare` AS b ON a.`labcode1` = b.`codex`;
+
+
+
+
+
+SELECT 
+'001151200' AS `source_id`,
+a.`autonumber` AS `id`,
+c.`idcard` AS `patient_cid`,
+c.`encounter_id` AS `encounter_id`,
+'final' AS `status`,
+b.`labpart` AS `category_display`,
+b.`labpart` AS `category_code`,
+b.`labpart` AS `category_system`,
+b.`labname` AS `code_display`,
+b.`TMLT` AS `code_code`,
+'tmlt' AS `code_system`,
+a.`orderdate` AS `effective_date_time`,
+'' AS `effective_period_start`,
+'' AS `effective_period_end`,
+'001151200' AS `performer`,
+'' AS `results_interpreter`,
+'' AS `conclusion`,
+'' AS `conclusion_display`,
+'' AS `conclusion_code`,
+0 AS `deleted`,
+a.`orderdate` AS `last_update_date_time`
 FROM (
-	SELECT `orderdate`,`hn`,`labnumber`,CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn` FROM `resulthead` WHERE `priority` <> '' AND `testgroupname` <> '' GROUP BY `labnumber`
-) as a 
+	SELECT `autonumber`,`orderdate`,`labnumber`,`thdatehn` FROM `tmp_resulthead` GROUP BY `labnumber` ORDER BY `autonumber`
+) AS a 
 LEFT JOIN `tmp_orderdetail` AS b ON a.`labnumber` = b.`labnumber` 
-LEFT JOIN `tmp_labcare` AS c ON b.`labcode1` = c.`codex`
-WHERE b.`labnumber` IS NOT NULL
+LEFT JOIN `tmp_opday` AS c ON a.`thdatehn` = c.`thdatehn` 
+WHERE b.`labnumber` IS NOT NULL 
+AND c.`encounter_id` IS NOT NULL
