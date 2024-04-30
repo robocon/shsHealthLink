@@ -1,3 +1,35 @@
+
+DROP TABLE IF EXISTS `tmp_resultdetail`;
+CREATE TABLE IF NOT EXISTS `tmp_resultdetail`(
+	`autonumber` INT(11) PRIMARY KEY,
+	`orderdate` VARCHAR(100) NOT NULL,
+	`hn` VARCHAR(100) NOT NULL,
+	`profilecode` VARCHAR(100) NOT NULL,
+	`testgroupname` VARCHAR(100) NOT NULL,
+	`thdatehn` VARCHAR(100) NOT NULL,
+	`labcode` VARCHAR(100) NOT NULL,
+	`labname` VARCHAR(100) NOT NULL,
+	`result` VARCHAR(100) NOT NULL,
+	`unit` VARCHAR(100) NOT NULL,
+	`authorisedate` VARCHAR(100) NOT NULL,
+	KEY `labnumber` (`labnumber`),
+	KEY `thdatehn` (`thdatehn`)
+);
+INSERT INTO `tmp_resultdetail` 
+SELECT x.*,y.`labcode`,y.`labname`,y.`result`,y.`unit`,y.`authorisedate` FROM (
+		SELECT `autonumber`,`orderdate`,`hn`,`profilecode`,`testgroupname`,
+		CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
+		FROM `resulthead` 
+		WHERE `orderdate` >= '2024-01-01 00:00:00' 
+		AND `priority` != ''
+) AS x 
+LEFT JOIN `resultdetail` AS y ON x.`autonumber` = y.`autonumber`
+ORDER BY x.`autonumber` ASC;
+
+
+
+
+
 SELECT 
 '001151200' AS `source_id`,
 CONCAT(a.`autonumber`,a.`labcode`) AS `id`,
