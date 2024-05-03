@@ -21,6 +21,8 @@ FROM `opday`
 WHERE `thidate` >= '2561-12-01 00:00:00' AND `hn` <> '' AND ( TRIM(`idcard`) <> '' AND TRIM(`idcard`) != '-' ) ;
 */
 
+
+INSERT INTO `client_medication_statement` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `extension_string`, `extension_drug_strength`, `extension_drug_qty`, `extension_drug_unit`, `medication_display`, `medication_code`, `medication_system`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `information_source`, `note`, `note_date_time`, `dosage_text`, `dosage_timing_frequency`, `dosage_timing_period`, `dosage_timing_unit`, `dosage_qty`, `dosage_unit`, `dosage_as_needed_boolean`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS `source_id`,
 x.`row_id` AS `id`,

@@ -1,3 +1,4 @@
+INSERT INTO `client_vital_signs` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category`, `code_display`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `performer`, `value_string`, `value_qty`, `value_unit`, `value_code`, `value_system`, `interpretation_display`, `interpretation_code`, `reference_range_low`, `reference_range_high`, `reference_range_text`, `note`, `note_date_time`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS `source_id`,
 CONCAT(a.row_id,a.fieldName) AS `id`,

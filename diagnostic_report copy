@@ -1,8 +1,8 @@
 /*
 Build ตารางขึ้นมาใหม่ ให้มีข้อมูลน้อยลงจะได้ query ได้ง่ายขึ้น
 */
-DROP TABLE IF EXISTS tmp_opday;
-CREATE TABLE IF NOT EXISTS tmp_opday(
+DROP TABLE IF EXISTS `tmp_opday`;
+CREATE TABLE IF NOT EXISTS `tmp_opday`(
 	`encounter_id` INT(11) PRIMARY KEY,
 	`idcard` VARCHAR(100) NOT NULL,
 	`hn` VARCHAR(100) NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS tmp_opday(
 	KEY thdatehn (thdatehn),
 	KEY an (an)
 );
-INSERT INTO tmp_opday 
+INSERT INTO `tmp_opday` 
 SELECT row_id AS encounter_id,TRIM(`idcard`) AS `idcard`,`hn`,`an`,`thdatehn` 
 FROM `opday` WHERE 
 `thidate` >= '2561-12-01 00:00:00' 
@@ -36,7 +36,6 @@ SELECT `autonumber`,`labnumber`,`orderdate`,`profilecode`,`testgroupname`,
 CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
 FROM `resulthead` 
 WHERE `orderdate` >= '2019-01-01 00:00:00' 
-AND `priority` <> '' AND `testgroupname` <> '';
 
 
 
@@ -66,15 +65,16 @@ CREATE TABLE IF NOT EXISTS `tmp_labcare`(
 	`codex` VARCHAR(100) NOT NULL,
 	`labpart` VARCHAR(100) NOT NULL,
 	`TMLT` VARCHAR(100) NOT NULL,
-	KEY `code` (`code`)
+	KEY `codelab` (`codelab`)
 );
 INSERT INTO `tmp_labcare` 
-SELECT TRIM(x.`code`),x.`detail`,x.`codelab`,x.`codex`,x.`labpart`,y.`TMLT` FROM (
+SELECT TRIM(x.`code`) AS `code`,x.`detail`,x.`codelab`,x.`codex`,x.`labpart`,y.`TMLT` FROM (
 	SELECT `code`,`detail`,`codelab`,`codex`,`labpart`
 	FROM `labcare` 
 	WHERE `codelab` != '' 
 ) AS x 
-LEFT JOIN `tmp_tmtlab` AS y ON x.`codex` = y.`LCCode`;
+LEFT JOIN `tmp_tmtlab` AS y ON x.`codex` = y.`LCCode`
+GROUP BY x.`codelab`;
 
 
 
@@ -107,22 +107,24 @@ CREATE TABLE IF NOT EXISTS `tmp_orderdetail`(
 INSERT INTO `tmp_orderdetail` 
 SELECT a.`labnumber`,a.`labcode1`,a.`labname`,b.`code`,b.`detail`,b.`codelab`,b.`codex`,b.`labpart`,b.`TMLT`
 FROM `pre_orderdetail` AS a 
-LEFT JOIN `tmp_labcare` AS b ON a.`labcode1` = b.`codex`;
+LEFT JOIN `tmp_labcare` AS b ON a.`labcode1` = b.`codex` AND a.`labname` = b.`detail`
+GROUP BY a.`labcode1`,a.`labnumber`
+ORDER BY a.`labnumber`;
 
 
 
-
-
+TRUNCATE TABLE `client_diagnostic_report`;
+INSERT INTO `client_diagnostic_report` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category_display`, `category_code`, `category_system`, `code_display`, `code_code`, `code_system`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `performer`, `results_interpreter`, `conclusion`, `conclusion_display`, `conclusion_code`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS `source_id`,
 a.`autonumber` AS `id`,
 c.`idcard` AS `patient_cid`,
 c.`encounter_id` AS `encounter_id`,
 'final' AS `status`,
-b.`labpart` AS `category_display`,
-b.`labpart` AS `category_code`,
-b.`labpart` AS `category_system`,
-b.`labname` AS `code_display`,
+a.`testgroupname` AS `category_display`,
+a.`testgroupname` AS `category_code`,
+a.`testgroupname` AS `category_system`,
+b.`detail` AS `code_display`,
 b.`TMLT` AS `code_code`,
 'tmlt' AS `code_system`,
 a.`orderdate` AS `effective_date_time`,
@@ -136,9 +138,9 @@ a.`orderdate` AS `effective_date_time`,
 0 AS `deleted`,
 a.`orderdate` AS `last_update_date_time`
 FROM (
-	SELECT `autonumber`,`orderdate`,`labnumber`,`thdatehn` FROM `tmp_resulthead` GROUP BY `labnumber` ORDER BY `autonumber`
+	SELECT `autonumber`,`orderdate`,`profilecode`,`labnumber`,`testgroupname`,`thdatehn` FROM `tmp_resulthead` ORDER BY `autonumber`
 ) AS a 
-LEFT JOIN `tmp_orderdetail` AS b ON a.`labnumber` = b.`labnumber` 
+LEFT JOIN `tmp_labcare` AS b ON a.`profilecode` = b.`codelab` 
 LEFT JOIN `tmp_opday` AS c ON a.`thdatehn` = c.`thdatehn` 
-WHERE b.`labnumber` IS NOT NULL 
-AND c.`encounter_id` IS NOT NULL
+WHERE c.`encounter_id` IS NOT NULL 
+AND b.`detail` IS NOT NULL
