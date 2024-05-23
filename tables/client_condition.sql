@@ -1,16 +1,16 @@
 /*
 Navicat MySQL Data Transfer
 
-Source Server         : 127 Localhost
-Source Server Version : 50731
-Source Host           : localhost:3306
+Source Server         : HealthLink
+Source Server Version : 80017
+Source Host           : 192.168.129.74:3306
 Source Database       : smdb
 
 Target Server Type    : MYSQL
-Target Server Version : 50731
+Target Server Version : 80017
 File Encoding         : 65001
 
-Date: 2024-04-02 09:14:25
+Date: 2024-05-23 13:51:51
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -20,7 +20,7 @@ SET FOREIGN_KEY_CHECKS=0;
 -- ----------------------------
 DROP TABLE IF EXISTS `client_condition`;
 CREATE TABLE `client_condition` (
-  `source_id` varchar(255) NOT NULL,
+  `source_id` varchar(255) DEFAULT NULL,
   `id` varchar(255) DEFAULT NULL,
   `patient_cid` varchar(255) DEFAULT NULL,
   `encounter_id` varchar(255) DEFAULT NULL,

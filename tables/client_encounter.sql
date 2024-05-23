@@ -1,16 +1,16 @@
 /*
 Navicat MySQL Data Transfer
 
-Source Server         : 127 Localhost
-Source Server Version : 50731
-Source Host           : localhost:3306
+Source Server         : HealthLink
+Source Server Version : 80017
+Source Host           : 192.168.129.74:3306
 Source Database       : smdb
 
 Target Server Type    : MYSQL
-Target Server Version : 50731
+Target Server Version : 80017
 File Encoding         : 65001
 
-Date: 2024-03-29 12:31:59
+Date: 2024-05-23 13:18:40
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -40,5 +40,6 @@ CREATE TABLE `client_encounter` (
   `deleted` tinyint(4) DEFAULT NULL,
   `last_update_date_time` datetime DEFAULT NULL,
   UNIQUE KEY `id` (`id`),
-  KEY `patient_cid` (`patient_cid`)
+  KEY `patient_cid` (`patient_cid`),
+  KEY `reason_code` (`reason_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

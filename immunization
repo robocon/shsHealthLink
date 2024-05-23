@@ -27,4 +27,4 @@ FROM (
 ) AS a 
 LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn` 
 LEFT JOIN `druglst` AS c ON c.`drugcode` = a.`drugcode`
-ORDER BY a.`row_id` ASC 
+ORDER BY a.`row_id` ASC;
