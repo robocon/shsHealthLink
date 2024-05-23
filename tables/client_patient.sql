@@ -1,16 +1,16 @@
 /*
 Navicat MySQL Data Transfer
 
-Source Server         : 127 Localhost
-Source Server Version : 50731
-Source Host           : localhost:3306
+Source Server         : HealthLink
+Source Server Version : 80017
+Source Host           : 192.168.129.74:3306
 Source Database       : smdb
 
 Target Server Type    : MYSQL
-Target Server Version : 50731
+Target Server Version : 80017
 File Encoding         : 65001
 
-Date: 2024-03-27 09:29:16
+Date: 2024-05-23 11:11:08
 */
 
 SET FOREIGN_KEY_CHECKS=0;
