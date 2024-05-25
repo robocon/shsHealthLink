@@ -1,64 +1,165 @@
-DROP TEMPORARY TABLE IF EXISTS tmp_diag ;
-CREATE TEMPORARY TABLE IF NOT EXISTS tmp_diag(
-	row_id int(11),
-	hn VARCHAR(100) NOT NULL,
-	an VARCHAR(100) NOT NULL,
-	icd10 VARCHAR(100) NOT NULL,
-	diag VARCHAR(100) NOT NULL,
-	type VARCHAR(100) NULL,
-	svdate VARCHAR(100) NOT NULL,
-	regisdate VARCHAR(100) NOT NULL,
-	svdate_vn VARCHAR(100) NOT NULL,
-	thdatevn VARCHAR(100) NOT NULL,
-	KEY thdatevn (thdatevn)
+ฟังก์ชั่นย่อยข้างใน
+DROP TABLE IF EXISTS `tmp_diag` ;
+CREATE TABLE IF NOT EXISTS `tmp_diag`(
+    `row_id` int(11),
+    `vn` VARCHAR(100) NOT NULL,
+    `an` VARCHAR(100) NULL,
+    `icd10` VARCHAR(100) NOT NULL,
+    `type` VARCHAR(100) NULL,
+    `diag` VARCHAR(100) NOT NULL,
+    `regisdate` VARCHAR(100) NOT NULL,
+    `svdate` VARCHAR(100) NOT NULL,
+    `thdatevn` VARCHAR(100) NOT NULL,
+    `thdatehn` VARCHAR(100) NOT NULL,
+    KEY `an` (`an`),
+    KEY `thdatevn` (`thdatevn`),
+    KEY `thdatehn` (`thdatehn`)
 );
-INSERT INTO tmp_diag 
-SELECT `row_id`,`hn`,`an`,`icd10`,`type`,`diag`,`svdate`,`regisdate`,`svdate_en`,CONCAT(SUBSTRING(`svdate`,9,2),'-',SUBSTRING(`svdate`,6,2),'-',(SUBSTRING(`svdate`,1,4)),`an`) AS `thdatevn`
-FROM `diag` 
-WHERE `svdate_en` >= '2019-01-01' 
-AND TRIM(`icd10`) != '';
 
-DROP TEMPORARY TABLE IF EXISTS tmp_opday ;
-CREATE TEMPORARY TABLE IF NOT EXISTS tmp_opday(
-	row_id int(11) NOT NULL,
-	thdatehn VARCHAR(100) NOT NULL,
-	thdatevn VARCHAR(100) NOT NULL,
-	idcard VARCHAR(100) NOT NULL,
-	icd10 VARCHAR(100) NOT NULL,
-	KEY thdatevn (thdatevn)
+INSERT INTO `tmp_diag` 
+SELECT `row_id`,(
+    CASE WHEN LOCATE('/', `an`)=0 THEN `an`
+    ELSE ''
+    END
+) AS `vn`,(
+    CASE WHEN LOCATE('/', `an`)>0 THEN `an`
+    ELSE ''
+    END
+) AS `an`,
+`icd10`,`type`,`diag`,`regisdate`,(
+    CASE WHEN `svdate` = '' THEN `regisdate`
+    ELSE `svdate`
+    END
+) AS `svdate`,(
+    CASE WHEN `svdate` = '' THEN CONCAT(SUBSTRING(`regisdate`,9,2),'-',SUBSTRING(`regisdate`,6,2),'-',(SUBSTRING(`regisdate`,1,4)),`an`)
+    ELSE CONCAT(SUBSTRING(`svdate`,9,2),'-',SUBSTRING(`svdate`,6,2),'-',(SUBSTRING(`svdate`,1,4)),`an`)
+    END
+) AS `thdatevn`,
+CONCAT(SUBSTRING(`regisdate`,9,2),'-',SUBSTRING(`regisdate`,6,2),'-',(SUBSTRING(`regisdate`,1,4)),`hn`) AS `thdatehn`
+FROM `diag` 
+WHERE TRIM(`icd10`) <> '' ORDER BY `row_id` ASC;
+OPTIMIZE TABLE `tmp_diag`;
+
+
+
+
+
+DROP TABLE IF EXISTS `tmp_opday` ;
+CREATE TABLE IF NOT EXISTS `tmp_opday`(
+    `row_id` INT(11) NOT NULL,
+    `an` VARCHAR(100) NULL,
+    `thdatehn` VARCHAR(100) NOT NULL,
+    `thdatevn` VARCHAR(100) NOT NULL,
+    `idcard` VARCHAR(100) NOT NULL,
+    `icd10` VARCHAR(100) NOT NULL,
+    KEY `an` (`an`),
+    KEY `thdatehn` (`thdatehn`),
+    KEY `thdatevn` (`thdatevn`)
 );
-INSERT INTO tmp_opday
-SELECT `row_id`,`thdatehn`,`thdatevn`,TRIM(`idcard`) AS `idcard`,TRIM(`icd10`) AS `icd10` 
+INSERT INTO `tmp_opday`
+SELECT `row_id`,TRIM(`an`) AS `an`,`thdatehn`,`thdatevn`,TRIM(`idcard`) AS `idcard`,TRIM(`icd10`) AS `icd10` 
 FROM `opday`
-WHERE `thidate` >= '2562-01-01 00:00:00' 
-AND `icd10` != ''
+WHERE `icd10` != ''
 AND TRIM(`idcard`) != '-'
-AND TRIM(`idcard`) != '';
+AND TRIM(`idcard`) <> '';
+OPTIMIZE TABLE `tmp_opday`;
+
+
+
+
 
 TRUNCATE TABLE `client_condition`;
 INSERT INTO `client_condition` (`source_id`, `id`, `patient_cid`, `encounter_id`, `clinical_status`, `verification_status`, `category`, `severity`, `code_display`, `code_code`, `code_system`, `body_site_display`, `body_site_code`, `recorded_date`, `note`, `note_date_time`, `diagnosis_display`, `diagnosis_code`, `diagnosis_system`, `diagnosis_rank`, `deleted`, `last_update_date_time`) 
 SELECT
 '001151200' AS 'source_id',
 a.`row_id` AS 'id',
-IF(c.`idcard`='', getCidFromAn(a.an), c.`idcard`) AS 'patient_cid',
-IF(c.`row_id`='', getEncounterIdFromAn(a.an), c.`row_id`) AS 'encounter_id',
+-- IF(c.`idcard`='', getCidFromAn(a.an), c.`idcard`) AS 'patient_cid',
+-- IF(c.`row_id`='', getEncounterIdFromAn(a.an), c.`row_id`) AS 'encounter_id',
 checkChronic(a.`icd10`) AS 'clinical_status',
 'confirmed' AS 'verification_status',
 'encounter-diagnosis' AS 'category',
 '' AS 'severity',
 a.`diag` AS 'code_display',
-IF(a.`icd10`='', a.`diag`, a.`icd10`) AS 'code_code',
-IF(a.`icd10`='', a.`diag`, a.`icd10`) AS 'code_system',
+a.`icd10` AS 'code_code',
+a.`icd10` AS 'code_system',
 '' AS 'body_site_display',
 '' AS 'body_site_code',
-IF(a.`svdate`='', strDatetimeToEn(a.`regisdate`), strDatetimeToEn(a.`svdate`)) AS 'recorded_date',
+strDatetimeToEn(a.`svdate`) AS 'recorded_date',
 '' AS 'note',
 '' AS 'note_date_time',
-getTypeDiag(a.an,a.type) AS 'diagnosis_display',
-getTypeDiag(a.an,a.type) AS 'diagnosis_code',
-getTypeDiag(a.an,a.type) AS 'diagnosis_system',
+getTypeDiag(a.`an`,a.`type`) AS 'diagnosis_display',
+getTypeDiag(a.`an`,a.`type`) AS 'diagnosis_code',
+getTypeDiag(a.`an`,a.`type`) AS 'diagnosis_system',
 '1' AS 'diagnosis_rank',
 0 AS 'deleted',
-IF(a.`svdate`='', strDatetimeToEn(a.`regisdate`), strDatetimeToEn(a.`svdate`)) AS 'last_update_date_time' 
-FROM tmp_diag AS a
-LEFT JOIN tmp_opday AS c ON a.`thdatevn` = c.`thdatevn`;
+strDatetimeToEn(a.`svdate`) AS 'last_update_date_time' 
+FROM `tmp_diag` AS a
+LEFT JOIN `tmp_opday` AS c ON a.`thdatehn` = c.`thdatehn`;
+
+
+
+ ||
+ ||
+\||/
+ \/
+
+
+SELECT  
+'001151200' AS 'source_id',
+a.`row_id` AS 'id',
+c.`idcard` AS 'patient_cid',
+c.`row_id` AS 'encounter_id',
+(CASE WHEN (SUBSTRING(a.`icd10`, 1,3) IN ('E10','E11','E12','E13','E14','I10','I11','I12','I13','I14','I15','I20','I21','I22','I23','I24','I25','J41','J42','J43','J44','I60','I61','I62','I63','I64')) > 0 THEN 'active'
+ELSE 'inactive'
+END) AS 'clinical_status',
+'confirmed' AS 'verification_status',
+'encounter-diagnosis' AS 'category',
+'' AS 'severity',
+a.`diag` AS 'code_display',
+a.`icd10` AS 'code_code',
+a.`icd10` AS 'code_system',
+'' AS 'body_site_display',
+'' AS 'body_site_code',
+CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'recorded_date',
+'' AS 'note',
+'' AS 'note_date_time',
+(CASE WHEN a.`type`='PRINCIPLE' THEN 'Chief complaint' ELSE 'Comorbidity diagnosis' END) AS `diagnosis_display`,
+(CASE WHEN a.`type`='PRINCIPLE' THEN 'Chief complaint' ELSE 'Comorbidity diagnosis' END) AS `diagnosis_code`,
+(CASE WHEN a.`type`='PRINCIPLE' THEN 'Chief complaint' ELSE 'Comorbidity diagnosis' END) AS `diagnosis_system`,
+'1' AS 'diagnosis_rank',
+0 AS 'deleted',
+CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'last_update_date_time'
+FROM `tmp_diag` AS a
+LEFT JOIN `tmp_opday` AS c ON a.`thdatehn` = c.`thdatehn`
+WHERE c.`row_id` IS NOT NULL AND a.`vn` <> ''
+
+UNION
+
+SELECT  
+'001151200' AS 'source_id',
+a.`row_id` AS 'id',
+c.`idcard` AS 'patient_cid',
+c.`row_id` AS 'encounter_id',
+(CASE WHEN (SUBSTRING(a.`icd10`, 1,3) IN ('E10','E11','E12','E13','E14','I10','I11','I12','I13','I14','I15','I20','I21','I22','I23','I24','I25','J41','J42','J43','J44','I60','I61','I62','I63','I64')) > 0 THEN 'active'
+ELSE 'inactive'
+END) AS 'clinical_status',
+'confirmed' AS 'verification_status',
+'encounter-diagnosis' AS 'category',
+'' AS 'severity',
+a.`diag` AS 'code_display',
+a.`icd10` AS 'code_code',
+a.`icd10` AS 'code_system',
+'' AS 'body_site_display',
+'' AS 'body_site_code',
+CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'recorded_date',
+'' AS 'note',
+'' AS 'note_date_time',
+'Discharge diagnosis' AS `diagnosis_display`,
+'Discharge diagnosis' AS `diagnosis_code`,
+'Discharge diagnosis' AS `diagnosis_system`,
+'1' AS 'diagnosis_rank',
+0 AS 'deleted',
+CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'last_update_date_time'
+FROM ( SELECT * FROM `tmp_diag` WHERE `an` <> '' ) AS a
+LEFT JOIN ( SELECT * FROM `tmp_opday` WHERE `an` <> '' ) AS c ON a.`thdatehn` = c.`thdatehn`
+WHERE c.`an` IS NOT NULL
