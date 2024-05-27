@@ -38,12 +38,12 @@ SELECT `row_id`,(
 CONCAT(SUBSTRING(`regisdate`,9,2),'-',SUBSTRING(`regisdate`,6,2),'-',(SUBSTRING(`regisdate`,1,4)),`hn`) AS `thdatehn`
 FROM `diag` 
 WHERE TRIM(`icd10`) <> '' ORDER BY `row_id` ASC;
-OPTIMIZE TABLE `tmp_diag`;
 
 
 DROP TABLE IF EXISTS `tmp_opday` ;
 CREATE TABLE IF NOT EXISTS `tmp_opday`(
     `row_id` INT(11) NOT NULL,
+    `hn` VARCHAR(100) NULL,
     `an` VARCHAR(100) NULL,
     `thdatehn` VARCHAR(100) NOT NULL,
     `thdatevn` VARCHAR(100) NOT NULL,
@@ -54,14 +54,11 @@ CREATE TABLE IF NOT EXISTS `tmp_opday`(
     KEY `thdatevn` (`thdatevn`)
 );
 INSERT INTO `tmp_opday`
-SELECT `row_id`,TRIM(`an`) AS `an`,`thdatehn`,`thdatevn`,TRIM(`idcard`) AS `idcard`,TRIM(`icd10`) AS `icd10` 
+SELECT `row_id`,TRIM(`hn`) AS `hn`,TRIM(`an`) AS `an`,`thdatehn`,`thdatevn`,TRIM(`idcard`) AS `idcard`,TRIM(`icd10`) AS `icd10` 
 FROM `opday`
 WHERE `icd10` != ''
 AND TRIM(`idcard`) != '-'
 AND TRIM(`idcard`) <> '';
-OPTIMIZE TABLE `tmp_opday`;
-
-
 
 
 
