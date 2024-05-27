@@ -1,8 +1,10 @@
+TRUNCATE TABLE `client_condition`;
+INSERT INTO `client_procedure` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category_display`, `category_code`, `code_display`, `code_code`, `code_system`, `performed_date_time`, `performer`, `reason_display`, `reason_code`, `reason_system`, `body_site_display`, `body_site_code`, `outcome_display`, `outcome_code`, `note`, `note_date_time`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS `source_id`,
 m.`row_id` AS `id`,
 y.`idcard` AS `patient_cid`,
-y.`encounter_id` AS `encounter_id`,
+y.`row_id` AS `encounter_id`,
 'completed' AS `status`,
 '' AS `category_display`,
 '' AS `category_code`,
@@ -22,7 +24,7 @@ m.admdate AS `performed_date_time`,
 '' AS `note_date_time`,
 0 AS `deleted`,
 m.admdate AS `last_update_date_time`
- FROM(
+	FROM(
 	SELECT CONCAT(a.`row_id`,'IPD') AS `row_id`,strDatetimeToEn(a.`admdate`) AS `admdate`,a.`icd9cm` AS `code`,CONCAT(SUBSTRING(`admdate`,9,2),'-',SUBSTRING(`admdate`,6,2),'-',(SUBSTRING(`admdate`,1,4)),`hn`) AS `thdatehn`,'ipd' AS 'pt'
 	FROM `ipicd9cm` AS a 
 	LEFT JOIN `ipcard` AS b ON a.`an` = b.`an` 
@@ -36,4 +38,4 @@ m.admdate AS `last_update_date_time`
 ) AS m 
 LEFT JOIN `icd9cm` AS n ON m.`code` = n.`code` 
 LEFT JOIN `tmp_opday` AS y ON m.`thdatehn` = y.`thdatehn` 
-WHERE TRIM(y.`idcard`) <> '' 
+WHERE TRIM(y.`idcard`) <> '';

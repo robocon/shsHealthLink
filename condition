@@ -41,9 +41,6 @@ WHERE TRIM(`icd10`) <> '' ORDER BY `row_id` ASC;
 OPTIMIZE TABLE `tmp_diag`;
 
 
-
-
-
 DROP TABLE IF EXISTS `tmp_opday` ;
 CREATE TABLE IF NOT EXISTS `tmp_opday`(
     `row_id` INT(11) NOT NULL,
@@ -70,40 +67,6 @@ OPTIMIZE TABLE `tmp_opday`;
 
 TRUNCATE TABLE `client_condition`;
 INSERT INTO `client_condition` (`source_id`, `id`, `patient_cid`, `encounter_id`, `clinical_status`, `verification_status`, `category`, `severity`, `code_display`, `code_code`, `code_system`, `body_site_display`, `body_site_code`, `recorded_date`, `note`, `note_date_time`, `diagnosis_display`, `diagnosis_code`, `diagnosis_system`, `diagnosis_rank`, `deleted`, `last_update_date_time`) 
-SELECT
-'001151200' AS 'source_id',
-a.`row_id` AS 'id',
--- IF(c.`idcard`='', getCidFromAn(a.an), c.`idcard`) AS 'patient_cid',
--- IF(c.`row_id`='', getEncounterIdFromAn(a.an), c.`row_id`) AS 'encounter_id',
-checkChronic(a.`icd10`) AS 'clinical_status',
-'confirmed' AS 'verification_status',
-'encounter-diagnosis' AS 'category',
-'' AS 'severity',
-a.`diag` AS 'code_display',
-a.`icd10` AS 'code_code',
-a.`icd10` AS 'code_system',
-'' AS 'body_site_display',
-'' AS 'body_site_code',
-strDatetimeToEn(a.`svdate`) AS 'recorded_date',
-'' AS 'note',
-'' AS 'note_date_time',
-getTypeDiag(a.`an`,a.`type`) AS 'diagnosis_display',
-getTypeDiag(a.`an`,a.`type`) AS 'diagnosis_code',
-getTypeDiag(a.`an`,a.`type`) AS 'diagnosis_system',
-'1' AS 'diagnosis_rank',
-0 AS 'deleted',
-strDatetimeToEn(a.`svdate`) AS 'last_update_date_time' 
-FROM `tmp_diag` AS a
-LEFT JOIN `tmp_opday` AS c ON a.`thdatehn` = c.`thdatehn`;
-
-
-
- ||
- ||
-\||/
- \/
-
-
 SELECT  
 '001151200' AS 'source_id',
 a.`row_id` AS 'id',
@@ -162,4 +125,4 @@ CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'rec
 CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'last_update_date_time'
 FROM ( SELECT * FROM `tmp_diag` WHERE `an` <> '' ) AS a
 LEFT JOIN ( SELECT * FROM `tmp_opday` WHERE `an` <> '' ) AS c ON a.`thdatehn` = c.`thdatehn`
-WHERE c.`an` IS NOT NULL
+WHERE c.`an` IS NOT NULL;
