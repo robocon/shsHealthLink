@@ -17,32 +17,32 @@ b.`idcard` AS `patient_cid`,
 END) AS `verification_status`,
 'allergy' AS `type`,
 'medication' AS `category`,
-IF(a.`advreact`!='','high','low' ) AS `criticality`,
+'low' AS `criticality`,
 (CASE
-	WHEN c.`genname` IS NOT NULL THEN c.`genname`
-	WHEN c.`genname` IS NULL THEN a.`tradname`
+	WHEN TRIM(c.`genname`) <> '' THEN TRIM(c.`genname`)
+	ELSE TRIM(a.`tradname`)
 END) AS `code_display`,
 (CASE
-	WHEN c.`tmt` IS NOT NULL THEN c.`tmt`
-	WHEN c.`tmt` IS NULL THEN a.`tradname`
+	WHEN TRIM(c.`tmt`) <> '' THEN TRIM(c.`tmt`)
+	ELSE TRIM(a.`tradname`)
 END) AS `code_code`,
 (CASE
-	WHEN c.`tmt` IS NOT NULL THEN c.`tmt`
-	WHEN c.`tmt` IS NULL THEN a.`tradname`
+	WHEN TRIM(c.`tmt`) <> '' THEN TRIM(c.`tmt`)
+	ELSE 'https://surasakhospital.mi.th'
 END) AS `code_sytem`,
-'' AS `onset_date_time`,
-checkToBc(a.`date`) AS `recorded_date`,
+IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `onset_date_time`,
+IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `recorded_date`,
 allergyReaction(a.`advreact`) AS `reaction_display`,
 allergyReaction(a.`advreact`) AS `reaction_code`,
-allergyReaction(a.`advreact`) AS `reaction_system`,
+'https://surasakhospital.mi.th' AS `reaction_system`,
 'moderate' AS `reaction_severity`,
 '' AS `note`,
-'' AS `note_date_time`,
+IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `note_date_time`,
 0 AS `deleted`,
-checkToBc(a.`date`) AS `last_update_date_time`
+IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `last_update_date_time`
 FROM `drugreact` AS a 
 LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn` 
 LEFT JOIN `druglst` AS c ON c.`drugcode` = a.`drugcode` 
 WHERE (b.`idcard` <> '' AND b.`idcard` != '-') 
 AND a.`advreact` != ''  
-ORDER BY a.`row_id` ASC
+ORDER BY a.`row_id` ASC;

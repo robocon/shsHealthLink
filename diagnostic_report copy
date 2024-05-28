@@ -19,6 +19,42 @@ AND TRIM(`idcard`) <> '' AND TRIM(`idcard`) != '-'
 ORDER BY `encounter_id` ASC;
 
 
+DROP TEMPORARY TABLE IF EXISTS `pre_orderdetail`;
+CREATE TEMPORARY TABLE IF NOT EXISTS `pre_orderdetail`(
+	`labnumber` VARCHAR(100) NOT NULL,
+	`labcode1` VARCHAR(100) NOT NULL,
+	`labname` VARCHAR(100) NOT NULL,
+	KEY `labnumber` (`labnumber`)
+);
+INSERT INTO `pre_orderdetail` 
+SELECT `labnumber`,`labcode1`,`labname` FROM `orderdetail` WHERE `labcode` <> '' ;
+
+
+DROP TABLE IF EXISTS `tmp_orderdetail`;
+CREATE TABLE IF NOT EXISTS `tmp_orderdetail`(
+	`labnumber` VARCHAR(100) NOT NULL,
+	`labcode1` VARCHAR(100) NOT NULL,
+	`labname` VARCHAR(100) NOT NULL,
+	`code` VARCHAR(100) NOT NULL,
+	`detail` VARCHAR(100) NOT NULL,
+	`codelab` VARCHAR(100) NOT NULL,
+	`codex` VARCHAR(100) NOT NULL,
+	`labpart` VARCHAR(100) NOT NULL,
+	`TMLT` VARCHAR(100) NOT NULL,
+	KEY `labnumber` (`labnumber`)
+);
+INSERT INTO `tmp_orderdetail` 
+SELECT a.`labnumber`,a.`labcode1`,a.`labname`,b.`code`,b.`detail`,b.`codelab`,b.`codex`,b.`labpart`,b.`TMLT`
+FROM `pre_orderdetail` AS a 
+LEFT JOIN `tmp_labcare` AS b ON a.`labcode1` = b.`codex` AND a.`labname` = b.`detail`
+GROUP BY a.`labcode1`,a.`labnumber`
+ORDER BY a.`labnumber`;
+
+
+
+
+
+
 
 DROP TABLE IF EXISTS `tmp_resulthead`;
 CREATE TABLE IF NOT EXISTS `tmp_resulthead`(
@@ -36,11 +72,6 @@ SELECT `autonumber`,`labnumber`,`orderdate`,`profilecode`,`testgroupname`,
 CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
 FROM `resulthead` 
 WHERE `orderdate` >= '2019-01-01 00:00:00' 
-
-
-
-
-
 
 /*
 tmtlab มันเอามา join ไม่ได้เพราะมีปัญหาเรื่อง collection เลยต้องสร้างเป็น temp 
@@ -80,39 +111,6 @@ GROUP BY x.`codelab`;
 
 
 
-DROP TEMPORARY TABLE IF EXISTS `pre_orderdetail`;
-CREATE TEMPORARY TABLE IF NOT EXISTS `pre_orderdetail`(
-	`labnumber` VARCHAR(100) NOT NULL,
-	`labcode1` VARCHAR(100) NOT NULL,
-	`labname` VARCHAR(100) NOT NULL,
-	KEY `labnumber` (`labnumber`)
-);
-INSERT INTO `pre_orderdetail` 
-SELECT `labnumber`,`labcode1`,`labname` FROM `orderdetail` WHERE `labcode` <> '' ;
-
-
-DROP TABLE IF EXISTS `tmp_orderdetail`;
-CREATE TABLE IF NOT EXISTS `tmp_orderdetail`(
-	`labnumber` VARCHAR(100) NOT NULL,
-	`labcode1` VARCHAR(100) NOT NULL,
-	`labname` VARCHAR(100) NOT NULL,
-	`code` VARCHAR(100) NOT NULL,
-	`detail` VARCHAR(100) NOT NULL,
-	`codelab` VARCHAR(100) NOT NULL,
-	`codex` VARCHAR(100) NOT NULL,
-	`labpart` VARCHAR(100) NOT NULL,
-	`TMLT` VARCHAR(100) NOT NULL,
-	KEY `labnumber` (`labnumber`)
-);
-INSERT INTO `tmp_orderdetail` 
-SELECT a.`labnumber`,a.`labcode1`,a.`labname`,b.`code`,b.`detail`,b.`codelab`,b.`codex`,b.`labpart`,b.`TMLT`
-FROM `pre_orderdetail` AS a 
-LEFT JOIN `tmp_labcare` AS b ON a.`labcode1` = b.`codex` AND a.`labname` = b.`detail`
-GROUP BY a.`labcode1`,a.`labnumber`
-ORDER BY a.`labnumber`;
-
-
-
 TRUNCATE TABLE `client_diagnostic_report`;
 INSERT INTO `client_diagnostic_report` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category_display`, `category_code`, `category_system`, `code_display`, `code_code`, `code_system`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `performer`, `results_interpreter`, `conclusion`, `conclusion_display`, `conclusion_code`, `deleted`, `last_update_date_time`) 
 SELECT 
@@ -143,4 +141,4 @@ FROM (
 LEFT JOIN `tmp_labcare` AS b ON a.`profilecode` = b.`codelab` 
 LEFT JOIN `tmp_opday` AS c ON a.`thdatehn` = c.`thdatehn` 
 WHERE c.`encounter_id` IS NOT NULL 
-AND b.`detail` IS NOT NULL
+AND b.`detail` IS NOT NULL;
