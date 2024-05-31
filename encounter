@@ -6,9 +6,9 @@ INSERT INTO `client_encounter` (`source_id`, `id`, `patient_cid`, `status`, `cla
 SELECT 
 '001151200' AS `source_id`,
 a.`row_id` AS `id`,
-TRIM(a.`idcard`) AS `patient_cid`,
+a.`idcard` AS `patient_cid`,
 'finished' AS 'status',
-IF(TRIM(a.`an`) !='' , 'IMP', IF(SUBSTRING(TRIM(a.`toborow`),1,4)='EX02', 'EMER', 'AMB') ) AS 'class',
+IF(a.`an` !='' , 'IMP', IF(a.`toborow`='EX02', 'EMER', 'AMB') ) AS 'class',
 '' AS 'type_display',
 '' AS 'type_code',
 '' AS 'type_system',
@@ -16,12 +16,12 @@ IF(TRIM(a.`an`) !='' , 'IMP', IF(SUBSTRING(TRIM(a.`toborow`),1,4)='EX02', 'EMER'
 '' AS 'service_type_code',
 '' AS 'service_type_system',
 CONCAT( (SUBSTRING(a.`thidate`,1,4)-543), SUBSTRING(a.`thidate`,5, 25) ) AS 'period_start',
-IF(TRIM(a.`an`) !='' , strDatetimeToen(getDcdate(TRIM(a.`an`))), '' ) AS 'period_end',
-TRIM(a.`diag`) AS 'reason_display',
-IF(TRIM(a.`icd10`)!='', TRIM(a.`icd10`), TRIM(a.`diag`)) AS 'reason_code',
+CONCAT( (SUBSTRING(a.`dcdate`,1,4)-543), SUBSTRING(a.`dcdate`,5, 25) ) AS 'period_end',
+a.`diag` AS 'reason_display',
+a.`icd10` AS 'reason_code',
 'http://thcc.or.th/ICD-10TM/' AS 'reason_system',
 '001151200' AS 'service_provider',
 0 AS 'deleted',
 CONCAT( (SUBSTRING(a.`thidate`,1,4)-543), SUBSTRING(a.`thidate`,5, 25) )AS 'last_update_date_time'
-FROM `opday` AS a 
-WHERE ( TRIM(a.`idcard`) != '' AND TRIM(a.`idcard`) != '-' );
+FROM `tmp_opday` AS a 
+WHERE ( a.`idcard` != '' AND a.`idcard` != '-' );

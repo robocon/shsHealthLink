@@ -28,13 +28,13 @@ END) AS `code_display`,
 END) AS `code_code`,
 (CASE
 	WHEN TRIM(c.`tmt`) <> '' THEN TRIM(c.`tmt`)
-	ELSE 'https://surasakhospital.mi.th'
+	ELSE 'https://surasakhospital.mi.th/'
 END) AS `code_sytem`,
 IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `onset_date_time`,
 IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `recorded_date`,
 allergyReaction(a.`advreact`) AS `reaction_display`,
 allergyReaction(a.`advreact`) AS `reaction_code`,
-'https://surasakhospital.mi.th' AS `reaction_system`,
+'https://surasakhospital.mi.th/' AS `reaction_system`,
 'moderate' AS `reaction_severity`,
 '' AS `note`,
 IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `note_date_time`,

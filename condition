@@ -20,8 +20,8 @@ CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'rec
 '' AS 'note',
 '' AS 'note_date_time',
 (CASE WHEN a.`type`='PRINCIPLE' THEN 'Chief complaint' ELSE 'Comorbidity diagnosis' END) AS `diagnosis_display`,
-(CASE WHEN a.`type`='PRINCIPLE' THEN 'Chief complaint' ELSE 'Comorbidity diagnosis' END) AS `diagnosis_code`,
-(CASE WHEN a.`type`='PRINCIPLE' THEN 'Chief complaint' ELSE 'Comorbidity diagnosis' END) AS `diagnosis_system`,
+(CASE WHEN a.`type`='PRINCIPLE' THEN 'CC' ELSE 'CM' END) AS `diagnosis_code`,
+'hospital' AS `diagnosis_system`,
 '1' AS 'diagnosis_rank',
 0 AS 'deleted',
 CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'last_update_date_time'
@@ -31,7 +31,7 @@ WHERE c.`row_id` IS NOT NULL AND a.`vn` <> ''
 
 UNION
 
-SELECT  
+SELECT 
 '001151200' AS 'source_id',
 a.`row_id` AS 'id',
 c.`idcard` AS 'patient_cid',
@@ -51,11 +51,11 @@ CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'rec
 '' AS 'note',
 '' AS 'note_date_time',
 'Discharge diagnosis' AS `diagnosis_display`,
-'Discharge diagnosis' AS `diagnosis_code`,
-'Discharge diagnosis' AS `diagnosis_system`,
+'DD' AS `diagnosis_code`,
+'hospital' AS `diagnosis_system`,
 '1' AS 'diagnosis_rank',
 0 AS 'deleted',
 CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'last_update_date_time'
 FROM ( SELECT * FROM `tmp_diag` WHERE `an` <> '' ) AS a
-LEFT JOIN ( SELECT * FROM `tmp_opday` WHERE `an` <> '' ) AS c ON a.`thdatehn` = c.`thdatehn`
+LEFT JOIN ( SELECT * FROM `tmp_opday` WHERE `an` <> '' ) AS c ON a.`an` = c.`an`
 WHERE c.`an` IS NOT NULL;
