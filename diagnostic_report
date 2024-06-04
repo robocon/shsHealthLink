@@ -1,15 +1,17 @@
-SELECT a.`autonumber`,a.`hn`,a.`profilecode`,
+TRUNCATE TABLE `client_diagnostic_report`;
+INSERT INTO `client_diagnostic_report` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category_display`, `category_code`, `category_system`, `code_display`, `code_code`, `code_system`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `performer`, `results_interpreter`, `conclusion`, `conclusion_display`, `conclusion_code`, `deleted`, `last_update_date_time`) 
+SELECT 
 '001151200' AS `source_id`,
-a.autonumber AS `id`,
-b.`idcard` AS `patient_cid`,
-b.`row_id` AS `encounter_id`,
+a.`autonumber` AS `id`,
+c.`idcard` AS `patient_cid`,
+c.`row_id` AS `encounter_id`,
 'final' AS `status`,
 a.`testgroupname` AS `category_display`,
 a.`testgroupname` AS `category_code`,
 'hospital' AS `category_system`,
-c.`detail` AS `code_display`,
-c.`detail` AS `code_code`,
-c.`detail` AS `code_system`,
+b.`detail` AS `code_display`,
+b.`TMLT` AS `code_code`,
+'http://this.or.th/index_TMLT.php' AS `code_system`,
 a.`orderdate` AS `effective_date_time`,
 '' AS `effective_period_start`,
 '' AS `effective_period_end`,
@@ -20,21 +22,10 @@ a.`orderdate` AS `effective_date_time`,
 '' AS `conclusion_code`,
 0 AS `deleted`,
 a.`orderdate` AS `last_update_date_time`
-FROM ( 
-	SELECT `autonumber`,`orderdate`,`hn`,`profilecode`,`testgroupname`,
-	CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
-	FROM `resulthead` 
-	WHERE `orderdate` >= '2019-01-01 00:00:00' 
-	AND `priority` != ''
+FROM (
+	SELECT `autonumber`,`orderdate`,`profilecode`,`labnumber`,`testgroupname`,`thdatehn` FROM `tmp_resulthead` ORDER BY `autonumber`
 ) AS a 
-LEFT JOIN ( 
-	SELECT row_id,TRIM(`idcard`) AS `idcard`,`hn`,`thdatehn` 
-	FROM `opday` WHERE 
-	`thidate` >= '2562-01-01 00:00:00' 
-	AND `idcard` != '' 
-	ORDER BY `row_id` ASC
-) AS b ON a.`thdatehn` = b.`thdatehn` 
-LEFT JOIN ( 
-	SELECT `code`,`detail`,`codelab` FROM `labcare` WHERE `codelab` != '' 
-) AS c ON a.`profilecode` = c.`codelab`
-WHERE b.`row_id` IS NOT NULL
+LEFT JOIN `tmp_labcare` AS b ON a.`profilecode` = b.`codelab` 
+LEFT JOIN `tmp_opday` AS c ON a.`thdatehn` = c.`thdatehn` 
+WHERE c.`row_id` IS NOT NULL 
+AND b.`detail` IS NOT NULL;

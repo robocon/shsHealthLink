@@ -118,3 +118,54 @@ SELECT m.`row_id`, m.`thidate`, m.`an`, m.`thdatehn`, m.`thdatevn`, m.`idcard`, 
 ) AS m WHERE m.`dcdate` IS NOT NULL
 ORDER BY m.`row_id` ASC;
 
+
+
+DROP TABLE IF EXISTS `tmp_resulthead`;
+CREATE TABLE IF NOT EXISTS `tmp_resulthead`(
+	`autonumber` INT(11) PRIMARY KEY,
+	`labnumber` VARCHAR(100) NOT NULL,
+	`orderdate` VARCHAR(100) NOT NULL,
+	`profilecode` VARCHAR(100) NOT NULL,
+	`testgroupname` VARCHAR(100) NOT NULL,
+	`thdatehn` VARCHAR(100) NOT NULL,
+	KEY `labnumber` (`labnumber`),
+	KEY `thdatehn` (`thdatehn`)
+);
+INSERT INTO `tmp_resulthead` 
+SELECT `autonumber`,`labnumber`,`orderdate`,`profilecode`,`testgroupname`,
+CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
+FROM `resulthead`;
+
+/*
+tmtlab มันเอามา join ไม่ได้เพราะมีปัญหาเรื่อง collection เลยต้องสร้างเป็น temp 
+*/
+DROP TABLE IF EXISTS `tmp_tmtlab` ;
+CREATE TABLE IF NOT EXISTS `tmp_tmtlab`(
+	`LCCode` VARCHAR(100) NOT NULL,
+	`TMLT` VARCHAR(100) NOT NULL,
+	KEY `LCCode` (`LCCode`)
+);
+INSERT INTO `tmp_tmtlab` 
+SELECT TRIM(`LCCode`) AS `LCCode`,TRIM(`TMLT`) AS `TMLT` FROM `tmtlab`;
+
+/*
+สร้าง labcare ขึ้นมาใหม่ โดยรวมเอา tmtlab เข้ามาเป็น table เดียวกัน
+*/
+DROP TABLE `tmp_labcare`;
+CREATE TABLE IF NOT EXISTS `tmp_labcare`(
+	`code` VARCHAR(100) NOT NULL,
+	`detail` VARCHAR(255) NOT NULL,
+	`codelab` VARCHAR(100) NOT NULL,
+	`codex` VARCHAR(100) NOT NULL,
+	`labpart` VARCHAR(100) NOT NULL,
+	`TMLT` VARCHAR(100) NOT NULL,
+	KEY `codelab` (`codelab`)
+);
+INSERT INTO `tmp_labcare` 
+SELECT TRIM(x.`code`) AS `code`,x.`detail`,x.`codelab`,x.`codex`,x.`labpart`,y.`TMLT` FROM (
+	SELECT `code`,`detail`,`codelab`,`codex`,`labpart`
+	FROM `labcare` 
+	WHERE `codelab` != '' 
+) AS x 
+LEFT JOIN `tmp_tmtlab` AS y ON x.`codex` = y.`LCCode`
+GROUP BY x.`codelab`;
