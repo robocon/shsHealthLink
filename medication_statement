@@ -3,27 +3,9 @@ INSERT INTO `client_medication_statement` (`source_id`, `id`, `patient_cid`, `en
 SELECT 
 '001151200' AS `source_id`,
 x.`row_id` AS `id`,
-(CASE
-	WHEN x.`an` <> '' THEN 
-		getCidFromAn(x.`an`)
-	ELSE 
-		y.`idcard`
-END) AS `patient_cid`,
-
-(CASE
-	WHEN x.an <> '' THEN 
-		getRowidFromAn(x.`an`)
-	ELSE 
-		y.`row_id`
-END) AS `encounter_id`,
-
-(CASE
-	WHEN x.an <> '' THEN 
-		'completed'
-	ELSE 
-		'active'
-END) AS `status`,
-
+y.`idcard` AS `patient_cid`,
+y.`row_id` AS `encounter_id`,
+'completed' AS `status`,
 CONCAT(x.`strength`,' ',x.`amount`,' ',x.`unit`) AS `extension_string`,
 IF(x.`strength`='', CONCAT(x.`amount`,' ',x.`unit`), x.`strength`) AS `extension_drug_strength`,
 x.`amount` AS `extension_drug_qty`,
@@ -47,4 +29,41 @@ x.`date` AS `effective_date_time`,
 0 AS `deleted`,
 x.`date` AS `last_update_date_time`
 FROM `tmp_drugrx` AS x
-LEFT JOIN `tmp_opday` AS y ON x.`thdatehn` = y.`thdatehn`;
+LEFT JOIN ( SELECT `row_id`,`thdatehn`,`idcard` FROM `tmp_opday` WHERE `an` = '' OR `an` IS NULL) AS y ON x.`thdatehn` = y.`thdatehn` 
+WHERE y.`row_id` IS NOT NULL 
+ORDER BY y.`row_id` ASC;
+
+
+INSERT INTO `client_medication_statement` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `extension_string`, `extension_drug_strength`, `extension_drug_qty`, `extension_drug_unit`, `medication_display`, `medication_code`, `medication_system`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `information_source`, `note`, `note_date_time`, `dosage_text`, `dosage_timing_frequency`, `dosage_timing_period`, `dosage_timing_unit`, `dosage_qty`, `dosage_unit`, `dosage_as_needed_boolean`, `deleted`, `last_update_date_time`) 
+SELECT 
+'001151200' AS `source_id`,
+x.`row_id` AS `id`,
+y.`idcard` AS `patient_cid`,
+y.`row_id` AS `encounter_id`,
+'completed' AS `status`,
+CONCAT(x.`strength`,' ',x.`amount`,' ',x.`unit`) AS `extension_string`,
+IF(x.`strength`='', CONCAT(x.`amount`,' ',x.`unit`), x.`strength`) AS `extension_drug_strength`,
+x.`amount` AS `extension_drug_qty`,
+x.`unit` AS `extension_drug_unit`,
+x.`genname` AS `medication_diaplay`,
+IF(x.`tmt`='',x.`genname`,x.`tmt`) AS `medication_code`,
+'https://healthlink.go.th/tmt/gpu' AS `medication_system`,
+x.`date` AS `effective_date_time`,
+'' AS `effective_period_start`,
+'' AS `effective_period_end`,
+'001151200' AS `information_source`,
+'' AS `note`,
+'' AS `note_date_time`,
+'' AS `dosage_text`,
+'' AS `dosage_timing_frequency`,
+'' AS `dosage_timing_period`,
+'' AS `dosage_timing_unit`,
+'' AS `dosage_qty`,
+'' AS `dosage_unit`,
+'' AS `dosage_as_needed_boolean`,
+0 AS `deleted`,
+x.`date` AS `last_update_date_time`
+FROM ( SELECT `row_id`,`strength`,`amount`,`unit`,`genname`,`tmt`,`date`,`an` FROM `tmp_drugrx` WHERE `an` <> '' AND `an` IS NOT NULL ) AS x
+LEFT JOIN ( SELECT `row_id`,`an`,`idcard` FROM `tmp_opday` WHERE `an` <> '' AND `an` IS NOT NULL) AS y ON x.`an` = y.`an` 
+WHERE y.`row_id` IS NOT NULL 
+ORDER BY y.`row_id` ASC;
