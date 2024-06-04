@@ -2,16 +2,16 @@ TRUNCATE TABLE `client_condition`;
 INSERT INTO `client_procedure` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category_display`, `category_code`, `code_display`, `code_code`, `code_system`, `performed_date_time`, `performer`, `reason_display`, `reason_code`, `reason_system`, `body_site_display`, `body_site_code`, `outcome_display`, `outcome_code`, `note`, `note_date_time`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS `source_id`,
-m.`row_id` AS `id`,
-y.`idcard` AS `patient_cid`,
-y.`row_id` AS `encounter_id`,
+CONCAT(a.`row_id`,'IPD') AS `id`,
+TRIM(b.`idcard`) AS `patient_cid`,
+b.`row_id` AS `encounter_id`,
 'completed' AS `status`,
 '' AS `category_display`,
 '' AS `category_code`,
-n.`detail` AS `code_display`,
-m.`code` AS `code_code`,
-'icd9-cm' AS `code_system`,
-m.admdate AS `performed_date_time`,
+TRIM(c.`detail`) AS `code_display`,
+TRIM(a.`icd9cm`) AS `code_code`,
+'https://www.cdc.gov/nchs/icd/icd9.htm' AS `code_system`,
+CONCAT( (SUBSTRING(a.`admdate`,1,4) - 543), SUBSTRING(a.`admdate`,5, 25) ) AS `performed_date_time`,
 '001151200' AS `performer`,
 '' AS `reason_display`,
 '' AS `reason_code`,
@@ -21,21 +21,53 @@ m.admdate AS `performed_date_time`,
 '' AS `outcome_display`,
 '' AS `outcome_code`,
 '' AS `note`,
-'' AS `note_date_time`,
+CONCAT( (SUBSTRING(a.`admdate`,1,4) - 543), SUBSTRING(a.`admdate`,5, 25) ) AS `note_date_time`,
 0 AS `deleted`,
-m.admdate AS `last_update_date_time`
-	FROM(
-	SELECT CONCAT(a.`row_id`,'IPD') AS `row_id`,strDatetimeToEn(a.`admdate`) AS `admdate`,a.`icd9cm` AS `code`,CONCAT(SUBSTRING(`admdate`,9,2),'-',SUBSTRING(`admdate`,6,2),'-',(SUBSTRING(`admdate`,1,4)),`hn`) AS `thdatehn`,'ipd' AS 'pt'
-	FROM `ipicd9cm` AS a 
-	LEFT JOIN `ipcard` AS b ON a.`an` = b.`an` 
-	WHERE a.`icd9cm` <> '' 
+CONCAT( (SUBSTRING(a.`admdate`,1,4) - 543), SUBSTRING(a.`admdate`,5, 25) ) AS `last_update_date_time`
+FROM ( 
+	SELECT 
+	CONCAT(`row_id`,'OPD') AS `row_id`,
+	CONCAT( (SUBSTRING(`admdate`,1,4) - 543), SUBSTRING(`admdate`,5, 25) ) AS `admdate`,
+	TRIM(`icd9cm`) AS `icd9cm`,
+	CONCAT(SUBSTRING(`svdate`,9,2),'-',SUBSTRING(`svdate`,6,2),'-',(SUBSTRING(`svdate`,1,4)),`hn`) AS `thdatehn`
+	FROM `opicd9cm`
+	WHERE `icd9cm` <> ''
+) AS a 
+LEFT JOIN ( SELECT `row_id`,`thdatehn`,`idcard` FROM `tmp_opday` WHERE `an` = '' OR `an` IS NULL ) AS b ON a.`thdatehn` = b.`thdatehn` 
+LEFT JOIN `icd9cm` AS c ON a.`icd9cm` = c.`code` 
+WHERE (TRIM(a.`icd9cm`) <> '' AND b.`row_id` IS NOT NULL) 
+AND c.`detail` IS NOT NULL 
+ORDER BY c.`detail` ASC;
 
-	UNION
 
-	SELECT CONCAT(a.`row_id`,'OPD') AS `row_id`,strDatetimeToEn(a.`admdate`) AS `admdate`,a.`icd9cm` AS `code`,CONCAT(SUBSTRING(a.`svdate`,9,2),'-',SUBSTRING(a.`svdate`,6,2),'-',(SUBSTRING(a.`svdate`,1,4)),a.`hn`) AS `thdatehn`,'opd' AS 'pt'
-	FROM `opicd9cm` AS a
-	WHERE a.`icd9cm` <> ''
-) AS m 
-LEFT JOIN `icd9cm` AS n ON m.`code` = n.`code` 
-LEFT JOIN `tmp_opday` AS y ON m.`thdatehn` = y.`thdatehn` 
-WHERE TRIM(y.`idcard`) <> '';
+INSERT INTO `client_procedure` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category_display`, `category_code`, `code_display`, `code_code`, `code_system`, `performed_date_time`, `performer`, `reason_display`, `reason_code`, `reason_system`, `body_site_display`, `body_site_code`, `outcome_display`, `outcome_code`, `note`, `note_date_time`, `deleted`, `last_update_date_time`) 
+SELECT 
+'001151200' AS `source_id`,
+CONCAT(a.`row_id`,'IPD') AS `id`,
+TRIM(b.`idcard`) AS `patient_cid`,
+b.`row_id` AS `encounter_id`,
+'completed' AS `status`,
+'' AS `category_display`,
+'' AS `category_code`,
+TRIM(c.`detail`) AS `code_display`,
+TRIM(a.`icd9cm`) AS `code_code`,
+'https://www.cdc.gov/nchs/icd/icd9.htm' AS `code_system`,
+CONCAT( (SUBSTRING(a.`admdate`,1,4) - 543), SUBSTRING(a.`admdate`,5, 25) ) AS `performed_date_time`,
+'001151200' AS `performer`,
+'' AS `reason_display`,
+'' AS `reason_code`,
+'' AS `reason_system`,
+'' AS `body_site_display`,
+'' AS `body_site_code`,
+'' AS `outcome_display`,
+'' AS `outcome_code`,
+'' AS `note`,
+CONCAT( (SUBSTRING(a.`admdate`,1,4) - 543), SUBSTRING(a.`admdate`,5, 25) ) AS `note_date_time`,
+0 AS `deleted`,
+CONCAT( (SUBSTRING(a.`admdate`,1,4) - 543), SUBSTRING(a.`admdate`,5, 25) ) AS `last_update_date_time`
+FROM `ipicd9cm` AS a 
+LEFT JOIN ( SELECT `row_id`,`an`,`idcard` FROM `tmp_opday` WHERE `an` <> '' AND `an` IS NOT NULL) AS b ON a.`an` = b.`an` 
+LEFT JOIN `icd9cm` AS c ON a.`icd9cm` = c.`code` 
+WHERE (TRIM(a.`icd9cm`) <> '' AND b.`row_id` IS NOT NULL) 
+AND c.`detail` IS NOT NULL 
+ORDER BY a.`row_id` ASC;
