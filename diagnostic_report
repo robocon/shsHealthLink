@@ -62,7 +62,8 @@ x.`orderdate` AS `last_update_date_time`
 FROM ( 
 	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`patienttype`
 	FROM `tmp_resulthead` AS a 
-	LEFT JOIN `tmp_orderhead` AS b ON a.`thdatehn` = b.`thdatehn`
+	LEFT JOIN `tmp_orderhead` AS b ON a.`thdatehn` = b.`thdatehn` 
+	LEFT JOIN `ipcard` AS c ON b.`bedcode` = c.`bedcode` 
 	WHERE b.`autonumber` IS NOT NULL 
 	AND b.`patienttype` = 'IPD' 
 ) AS x 

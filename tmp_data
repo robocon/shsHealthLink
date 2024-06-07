@@ -119,7 +119,7 @@ SELECT m.`row_id`, m.`thidate`, m.`an`, m.`thdatehn`, m.`thdatevn`, m.`idcard`, 
 ORDER BY m.`row_id` ASC;
 
 
-
+// กำลังคิดอยู่ว่าจะแยก ipcard ออกมาเป็น temp แล้วเอา hn + bedcode จากใน orderhead ไปหาใน ipcard เพื่อเอา date ไป join กับใน tmp_opday หา encounter_id อีกที
 DROP TABLE IF EXISTS `tmp_orderhead`;
 CREATE TABLE IF NOT EXISTS `tmp_orderhead`(
 	`autonumber` INT(11) PRIMARY KEY,
@@ -128,14 +128,17 @@ CREATE TABLE IF NOT EXISTS `tmp_orderhead`(
 	`hn` VARCHAR(100) NOT NULL,
 	`patienttype` VARCHAR(100) NOT NULL,
 	`thdatehn` VARCHAR(100) NOT NULL,
+    `an` VARCHAR(100) NOT NULL,
 	KEY `labnumber` (`labnumber`),
 	KEY `thdatehn` (`thdatehn`)
 );
 INSERT INTO `tmp_orderhead` 
-SELECT `autonumber`,`labnumber`,`orderdate`,`hn`,`patienttype`,
-CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
-FROM `orderhead` 
-ORDER BY `autonumber`; 
+SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`hn`,a.`patienttype`,
+CONCAT(SUBSTRING(a.`orderdate`,9,2),'-',SUBSTRING(a.`orderdate`,6,2),'-',(SUBSTRING(a.`orderdate`,1,4)+543),a.`hn`) AS `thdatehn`,
+( SELECT b.`an` FROM `ipcard` AS b WHERE b.`hn` = a.`hn` AND b.`bedcode` = a.`bedcode` ) AS `an`
+FROM `orderhead` AS a 
+WHERE a.`hn` <> '' 
+ORDER BY a.`autonumber` ASC;
 
 
 
