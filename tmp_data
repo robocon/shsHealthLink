@@ -120,6 +120,25 @@ ORDER BY m.`row_id` ASC;
 
 
 
+DROP TABLE IF EXISTS `tmp_orderhead`;
+CREATE TABLE IF NOT EXISTS `tmp_orderhead`(
+	`autonumber` INT(11) PRIMARY KEY,
+	`orderdate` VARCHAR(100) NOT NULL,
+	`labnumber` VARCHAR(100) NOT NULL,
+	`hn` VARCHAR(100) NOT NULL,
+	`patienttype` VARCHAR(100) NOT NULL,
+	`thdatehn` VARCHAR(100) NOT NULL,
+	KEY `labnumber` (`labnumber`),
+	KEY `thdatehn` (`thdatehn`)
+);
+INSERT INTO `tmp_orderhead` 
+SELECT `autonumber`,`labnumber`,`orderdate`,`hn`,`patienttype`,
+CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
+FROM `orderhead` 
+ORDER BY `autonumber`; 
+
+
+
 DROP TABLE IF EXISTS `tmp_resulthead`;
 CREATE TABLE IF NOT EXISTS `tmp_resulthead`(
 	`autonumber` INT(11) PRIMARY KEY,

@@ -2,17 +2,17 @@ TRUNCATE TABLE `client_diagnostic_report`;
 INSERT INTO `client_diagnostic_report` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category_display`, `category_code`, `category_system`, `code_display`, `code_code`, `code_system`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `performer`, `results_interpreter`, `conclusion`, `conclusion_display`, `conclusion_code`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS `source_id`,
-a.`autonumber` AS `id`,
-c.`idcard` AS `patient_cid`,
-c.`row_id` AS `encounter_id`,
+x.`autonumber` AS `id`,
+y.`idcard` AS `patient_cid`,
+y.`row_id` AS `encounter_id`,
 'final' AS `status`,
-a.`testgroupname` AS `category_display`,
-a.`testgroupname` AS `category_code`,
+x.`testgroupname` AS `category_display`,
+x.`testgroupname` AS `category_code`,
 'hospital' AS `category_system`,
-b.`detail` AS `code_display`,
-b.`TMLT` AS `code_code`,
+z.`detail` AS `code_display`,
+z.`TMLT` AS `code_code`,
 'http://this.or.th/index_TMLT.php' AS `code_system`,
-a.`orderdate` AS `effective_date_time`,
+x.`orderdate` AS `effective_date_time`,
 '' AS `effective_period_start`,
 '' AS `effective_period_end`,
 '001151200' AS `performer`,
@@ -21,11 +21,52 @@ a.`orderdate` AS `effective_date_time`,
 '' AS `conclusion_display`,
 '' AS `conclusion_code`,
 0 AS `deleted`,
-a.`orderdate` AS `last_update_date_time`
-FROM (
-	SELECT `autonumber`,`orderdate`,`profilecode`,`labnumber`,`testgroupname`,`thdatehn` FROM `tmp_resulthead` ORDER BY `autonumber`
-) AS a 
-LEFT JOIN `tmp_labcare` AS b ON a.`profilecode` = b.`codelab` 
-LEFT JOIN `tmp_opday` AS c ON a.`thdatehn` = c.`thdatehn` 
-WHERE c.`row_id` IS NOT NULL 
-AND b.`detail` IS NOT NULL;
+x.`orderdate` AS `last_update_date_time`
+FROM ( 
+	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`patienttype`
+	FROM `tmp_resulthead` AS a 
+	LEFT JOIN `tmp_orderhead` AS b ON a.`thdatehn` = b.`thdatehn`
+	WHERE b.`autonumber` IS NOT NULL 
+	AND b.`patienttype` = 'OPD' 
+) AS x 
+LEFT JOIN (SELECT * FROM `tmp_opday` WHERE `an` IS NULL OR `an` = '' ) AS y ON x.`thdatehn` = y.`thdatehn` 
+LEFT JOIN `tmp_labcare` AS z ON x.`profilecode` = z.`codelab` 
+WHERE y.`row_id` IS NOT NULL 
+AND z.`detail` IS NOT NULL;
+
+
+
+INSERT INTO `client_diagnostic_report` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category_display`, `category_code`, `category_system`, `code_display`, `code_code`, `code_system`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `performer`, `results_interpreter`, `conclusion`, `conclusion_display`, `conclusion_code`, `deleted`, `last_update_date_time`) 
+SELECT 
+'001151200' AS `source_id`,
+x.`autonumber` AS `id`,
+y.`idcard` AS `patient_cid`,
+y.`row_id` AS `encounter_id`,
+'final' AS `status`,
+x.`testgroupname` AS `category_display`,
+x.`testgroupname` AS `category_code`,
+'hospital' AS `category_system`,
+z.`detail` AS `code_display`,
+z.`TMLT` AS `code_code`,
+'http://this.or.th/index_TMLT.php' AS `code_system`,
+x.`orderdate` AS `effective_date_time`,
+'' AS `effective_period_start`,
+'' AS `effective_period_end`,
+'001151200' AS `performer`,
+'' AS `results_interpreter`,
+'' AS `conclusion`,
+'' AS `conclusion_display`,
+'' AS `conclusion_code`,
+0 AS `deleted`,
+x.`orderdate` AS `last_update_date_time`
+FROM ( 
+	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`patienttype`
+	FROM `tmp_resulthead` AS a 
+	LEFT JOIN `tmp_orderhead` AS b ON a.`thdatehn` = b.`thdatehn`
+	WHERE b.`autonumber` IS NOT NULL 
+	AND b.`patienttype` = 'IPD' 
+) AS x 
+LEFT JOIN (SELECT * FROM `tmp_opday` WHERE `an` IS NOT NULL OR `an` <> '' ) AS y ON x.`thdatehn` = y.`thdatehn` 
+LEFT JOIN `tmp_labcare` AS z ON x.`profilecode` = z.`codelab` 
+WHERE y.`row_id` IS NOT NULL 
+AND z.`detail` IS NOT NULL;
