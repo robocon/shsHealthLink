@@ -103,26 +103,42 @@ TRIM(a.`thidate`) AS `dcdate`
 FROM `opday` AS a 
 WHERE (TRIM(a.`idcard`) != '-' AND TRIM(a.`idcard`) <> '') 
 AND ( a.`an` IS NULL OR a.`an` = '' )
-#AND ( a.`icd10` IS NOT NULL AND a.`icd10` <> '' )
 ORDER BY a.`row_id` ASC;
 
 INSERT INTO `tmp_opday`
-SELECT m.`row_id`, m.`thidate`, m.`an`, m.`thdatehn`, m.`thdatevn`, m.`idcard`, m.`icd10`, m.`toborow`, m.`diag`,m.`dcdate` FROM (
+SELECT m.`row_id`, m.`thidate`, m.`an`, m.`thdatehn`, m.`thdatevn`, m.`idcard`, m.`icd10`, m.`toborow`, m.`diag`,m.`dcdate` 
+FROM (
 	SELECT y.`row_id`,TRIM(y.`thidate`) AS `thidate`,TRIM(y.`an`) AS `an`,y.`thdatehn`,y.`thdatevn`,TRIM(y.`idcard`) AS `idcard`,TRIM(y.`icd10`) AS `icd10`,TRIM(y.`diag`) AS `diag`,SUBSTRING(TRIM(y.`toborow`),1,4) AS `toborow`, 
-	(SELECT x.`dcdate` FROM `ipcard` AS x WHERE x.`an` = y.`an` AND x.`dcdate` != '0000-00-00 00:00:00' ) AS `dcdate`
+	( SELECT x.`dcdate` FROM `ipcard` AS x WHERE x.`an` = y.`an` AND x.`dcdate` != '0000-00-00 00:00:00' ) AS `dcdate`
 	FROM `opday` AS y 
 	WHERE (TRIM(y.`idcard`) != '-' AND TRIM(y.`idcard`) <> '') 
 	AND ( y.`an` <> '' )
-	#AND ( y.`icd10` IS NOT NULL AND y.`icd10` <> '' )
 	ORDER BY y.`row_id` ASC
 ) AS m WHERE m.`dcdate` IS NOT NULL
 ORDER BY m.`row_id` ASC;
 
 
-// กำลังคิดอยู่ว่าจะแยก ipcard ออกมาเป็น temp แล้วเอา hn + bedcode จากใน orderhead ไปหาใน ipcard เพื่อเอา date ไป join กับใน tmp_opday หา encounter_id อีกที
+DROP TABLE IF EXISTS `tmp_ipcard`;
+CREATE TABLE IF NOT EXISTS `tmp_ipcard`(
+	`row_id` INT(11) PRIMARY KEY,
+	`date` VARCHAR(100) NOT NULL,
+	`an` VARCHAR(100) NOT NULL,
+	`hn` VARCHAR(100) NOT NULL,
+	`ptname` VARCHAR(100) NOT NULL,
+	`bedcode` VARCHAR(100) NOT NULL,
+    `dcdate` VARCHAR(100) NOT NULL,
+	KEY `an` (`an`),
+	KEY `hn` (`hn`)
+) COLLATE=`utf8_unicode_ci` ;
+INSERT INTO `tmp_ipcard`
+SELECT `row_id`,`date`,`an`,`hn`,`ptname`,`bedcode`,`dcdate` FROM `ipcard` WHERE `ptname` <> '' AND `bedcode` <> '' AND `dcdate` <> ''  ORDER BY `row_id` asc;
+
+
+
+
 DROP TABLE IF EXISTS `tmp_orderhead`;
 CREATE TABLE IF NOT EXISTS `tmp_orderhead`(
-	`autonumber` INT(11) PRIMARY KEY,
+	`autonumber` INT(11) NOT NULL,
 	`orderdate` VARCHAR(100) NOT NULL,
 	`labnumber` VARCHAR(100) NOT NULL,
 	`hn` VARCHAR(100) NOT NULL,
@@ -133,12 +149,13 @@ CREATE TABLE IF NOT EXISTS `tmp_orderhead`(
 	KEY `thdatehn` (`thdatehn`)
 );
 INSERT INTO `tmp_orderhead` 
-SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`hn`,a.`patienttype`,
-CONCAT(SUBSTRING(a.`orderdate`,9,2),'-',SUBSTRING(a.`orderdate`,6,2),'-',(SUBSTRING(a.`orderdate`,1,4)+543),a.`hn`) AS `thdatehn`,
-( SELECT b.`an` FROM `ipcard` AS b WHERE b.`hn` = a.`hn` AND b.`bedcode` = a.`bedcode` ) AS `an`
-FROM `orderhead` AS a 
-WHERE a.`hn` <> '' 
-ORDER BY a.`autonumber` ASC;
+SELECT x.`autonumber`,x.`orderdate`,x.`labnumber`,x.`hn`,x.`patienttype`,x.`thdatehn`,b.`an` FROM (
+	SELECT a.`autonumber`,a.`orderdate`,a.`labnumber`,a.`hn`,a.`patienttype`,
+	CONCAT(SUBSTRING(a.`orderdate`,9,2),'-',SUBSTRING(a.`orderdate`,6,2),'-',(SUBSTRING(a.`orderdate`,1,4)+543),a.`hn`) AS `thdatehn`,a.`room`
+	FROM `orderhead` AS a 
+	WHERE a.`hn` <> '' 
+) AS x 
+LEFT JOIN `tmp_ipcard` AS b ON b.`hn` = x.`hn` AND b.`bedcode` = x.`room`;
 
 
 
@@ -150,13 +167,19 @@ CREATE TABLE IF NOT EXISTS `tmp_resulthead`(
 	`profilecode` VARCHAR(100) NOT NULL,
 	`testgroupname` VARCHAR(100) NOT NULL,
 	`thdatehn` VARCHAR(100) NOT NULL,
+    `patienttype` VARCHAR(100) NOT NULL,
 	KEY `labnumber` (`labnumber`),
 	KEY `thdatehn` (`thdatehn`)
 );
 INSERT INTO `tmp_resulthead` 
-SELECT `autonumber`,`labnumber`,`orderdate`,`profilecode`,`testgroupname`,
-CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`
-FROM `resulthead`;
+SELECT `autonumber`,`labnumber`,`orderdate`,`profilecode`,`testgroupname`, 
+CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`,
+(CASE 
+    WHEN `sourcecode` IN ('00','100','101','102','ER','HD') THEN 'OPD' 
+    ELSE 'IPD' 
+END ) AS `patienttype` 
+FROM `resulthead` 
+ORDER BY `autonumber` ASC;
 
 /*
 tmtlab มันเอามา join ไม่ได้เพราะมีปัญหาเรื่อง collection เลยต้องสร้างเป็น temp 

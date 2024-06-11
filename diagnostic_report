@@ -23,15 +23,15 @@ x.`orderdate` AS `effective_date_time`,
 0 AS `deleted`,
 x.`orderdate` AS `last_update_date_time`
 FROM ( 
-	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`patienttype`
-	FROM `tmp_resulthead` AS a 
-	LEFT JOIN `tmp_orderhead` AS b ON a.`thdatehn` = b.`thdatehn`
-	WHERE b.`autonumber` IS NOT NULL 
-	AND b.`patienttype` = 'OPD' 
+	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`patienttype`,b.`an`
+	FROM ( SELECT * FROM `tmp_resulthead` WHERE `patienttype` = 'OPD' ) AS a 
+	LEFT JOIN ( SELECT * FROM `tmp_orderhead` WHERE `an` = '' ) AS b ON a.`labnumber` = b.`labnumber` 
+	WHERE b.`autonumber` IS NOT NULL
 ) AS x 
 LEFT JOIN (SELECT * FROM `tmp_opday` WHERE `an` IS NULL OR `an` = '' ) AS y ON x.`thdatehn` = y.`thdatehn` 
 LEFT JOIN `tmp_labcare` AS z ON x.`profilecode` = z.`codelab` 
 WHERE y.`row_id` IS NOT NULL 
+AND z.`TMLT` <> '' 
 AND z.`detail` IS NOT NULL;
 
 
@@ -60,14 +60,12 @@ x.`orderdate` AS `effective_date_time`,
 0 AS `deleted`,
 x.`orderdate` AS `last_update_date_time`
 FROM ( 
-	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`patienttype`
-	FROM `tmp_resulthead` AS a 
-	LEFT JOIN `tmp_orderhead` AS b ON a.`thdatehn` = b.`thdatehn` 
-	LEFT JOIN `ipcard` AS c ON b.`bedcode` = c.`bedcode` 
-	WHERE b.`autonumber` IS NOT NULL 
-	AND b.`patienttype` = 'IPD' 
+	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`patienttype`,b.`an`
+	FROM ( SELECT * FROM `tmp_resulthead` WHERE `patienttype` = 'IPD' ) AS a 
+	LEFT JOIN ( SELECT * FROM `tmp_orderhead` WHERE `an` <> '' ) AS b ON a.`labnumber` = b.`labnumber` 
+	WHERE b.`autonumber` IS NOT NULL
 ) AS x 
-LEFT JOIN (SELECT * FROM `tmp_opday` WHERE `an` IS NOT NULL OR `an` <> '' ) AS y ON x.`thdatehn` = y.`thdatehn` 
+LEFT JOIN (SELECT * FROM `tmp_opday` WHERE `an` IS NOT NULL OR `an` <> '' ) AS y ON x.`an` = y.`an` 
 LEFT JOIN `tmp_labcare` AS z ON x.`profilecode` = z.`codelab` 
-WHERE y.`row_id` IS NOT NULL 
+AND z.`TMLT` <> '' 
 AND z.`detail` IS NOT NULL;
