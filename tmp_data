@@ -80,6 +80,7 @@ ORDER BY `row_id` ASC;
 ใช้ใน 
 condition
 medication_statement
+diagnostic_report
 */
 DROP TABLE IF EXISTS `tmp_opday` ;
 CREATE TABLE IF NOT EXISTS `tmp_opday`(
@@ -106,7 +107,7 @@ AND ( a.`an` IS NULL OR a.`an` = '' )
 ORDER BY a.`row_id` ASC;
 
 INSERT INTO `tmp_opday`
-SELECT m.`row_id`, m.`thidate`, m.`an`, m.`thdatehn`, m.`thdatevn`, m.`idcard`, m.`icd10`, m.`toborow`, m.`diag`,m.`dcdate` 
+SELECT m.`row_id`, TRIM(m.`thidate`), TRIM(m.`an`), m.`thdatehn`, m.`thdatevn`, TRIM(m.`idcard`), TRIM(m.`icd10`), TRIM(m.`diag`),m.`toborow`, m.`dcdate` 
 FROM (
 	SELECT y.`row_id`,TRIM(y.`thidate`) AS `thidate`,TRIM(y.`an`) AS `an`,y.`thdatehn`,y.`thdatevn`,TRIM(y.`idcard`) AS `idcard`,TRIM(y.`icd10`) AS `icd10`,TRIM(y.`diag`) AS `diag`,SUBSTRING(TRIM(y.`toborow`),1,4) AS `toborow`, 
 	( SELECT x.`dcdate` FROM `ipcard` AS x WHERE x.`an` = y.`an` AND x.`dcdate` != '0000-00-00 00:00:00' ) AS `dcdate`
@@ -135,7 +136,9 @@ SELECT `row_id`,`date`,`an`,`hn`,`ptname`,`bedcode`,`dcdate` FROM `ipcard` WHERE
 
 
 
-
+/*
+diagnostic_report
+*/
 DROP TABLE IF EXISTS `tmp_orderhead`;
 CREATE TABLE IF NOT EXISTS `tmp_orderhead`(
 	`autonumber` INT(11) NOT NULL,
@@ -158,11 +161,14 @@ SELECT x.`autonumber`,x.`orderdate`,x.`labnumber`,x.`hn`,x.`patienttype`,x.`thda
 LEFT JOIN `tmp_ipcard` AS b ON b.`hn` = x.`hn` AND b.`bedcode` = x.`room`;
 
 
-
+/*
+diagnostic_report
+*/
 DROP TABLE IF EXISTS `tmp_resulthead`;
 CREATE TABLE IF NOT EXISTS `tmp_resulthead`(
 	`autonumber` INT(11) PRIMARY KEY,
 	`labnumber` VARCHAR(100) NOT NULL,
+    `hn` VARCHAR(100) NOT NULL,
 	`orderdate` VARCHAR(100) NOT NULL,
 	`profilecode` VARCHAR(100) NOT NULL,
 	`testgroupname` VARCHAR(100) NOT NULL,
@@ -172,7 +178,7 @@ CREATE TABLE IF NOT EXISTS `tmp_resulthead`(
 	KEY `thdatehn` (`thdatehn`)
 );
 INSERT INTO `tmp_resulthead` 
-SELECT `autonumber`,`labnumber`,`orderdate`,`profilecode`,`testgroupname`, 
+SELECT `autonumber`,`labnumber`,`hn`,`orderdate`,`profilecode`,`testgroupname`, 
 CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`,
 (CASE 
     WHEN `sourcecode` IN ('00','100','101','102','ER','HD') THEN 'OPD' 
@@ -180,6 +186,42 @@ CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(
 END ) AS `patienttype` 
 FROM `resulthead` 
 ORDER BY `autonumber` ASC;
+
+/*
+observation
+*/
+DROP TABLE IF EXISTS `tmp_resultdetail`;
+CREATE TABLE IF NOT EXISTS `tmp_resultdetail`(
+	`autonumber` INT(11) NOT NULL,
+    `labnumber` VARCHAR(100) NOT NULL,
+	`orderdate` VARCHAR(100) NOT NULL,
+	`profilecode` VARCHAR(100) NOT NULL,
+	`testgroupname` VARCHAR(100) NOT NULL,
+	`thdatehn` VARCHAR(100) NOT NULL,
+    `an` VARCHAR(100) NOT NULL,
+	`labcode` VARCHAR(100) NOT NULL,
+	`labname` VARCHAR(100) NOT NULL,
+	`result` VARCHAR(100) NOT NULL,
+	`unit` VARCHAR(100) NOT NULL,
+	`authorisedate` VARCHAR(100) NOT NULL,
+	KEY `labnumber` (`labnumber`),
+	KEY `thdatehn` (`thdatehn`),
+    KEY `an` (`an`)
+);
+INSERT INTO `tmp_resultdetail` 
+SELECT x.*,y.`labcode`,y.`labname`,y.`result`,y.`unit`,y.`authorisedate`
+FROM (
+
+	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`an`
+	FROM `tmp_resulthead` AS a 
+	LEFT JOIN `tmp_orderhead` AS b ON a.`labnumber` = b.`labnumber` 
+	WHERE b.`autonumber` IS NOT NULL
+
+) AS x 
+LEFT JOIN `resultdetail` AS y ON x.`autonumber` = y.`autonumber` 
+WHERE y.`autonumber` IS NOT NULL AND ( y.`result` <> '' AND y.`result` NOT LIKE '%-%' );
+
+
 
 /*
 tmtlab มันเอามา join ไม่ได้เพราะมีปัญหาเรื่อง collection เลยต้องสร้างเป็น temp 
@@ -195,6 +237,7 @@ SELECT TRIM(`LCCode`) AS `LCCode`,TRIM(`TMLT`) AS `TMLT` FROM `tmtlab`;
 
 /*
 สร้าง labcare ขึ้นมาใหม่ โดยรวมเอา tmtlab เข้ามาเป็น table เดียวกัน
+diagnostic_report
 */
 DROP TABLE `tmp_labcare`;
 CREATE TABLE IF NOT EXISTS `tmp_labcare`(
