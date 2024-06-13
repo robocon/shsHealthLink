@@ -1,3 +1,4 @@
+TRUNCATE TABLE `client_vital_signs`;
 INSERT INTO `client_vital_signs` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `category`, `code_display`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `performer`, `value_string`, `value_qty`, `value_unit`, `value_code`, `value_system`, `interpretation_display`, `interpretation_code`, `reference_range_low`, `reference_range_high`, `reference_range_text`, `note`, `note_date_time`, `deleted`, `last_update_date_time`) 
 SELECT 
 '001151200' AS `source_id`,
@@ -7,9 +8,9 @@ b.`row_id` AS `encounter_id`,
 'final' AS `status`,
 'vital-signs' AS `category`,
 a.`title` AS `code_display`,
-strDatetimeToen(a.`thidate`) AS `effective_date_time`,
-'' AS `effective_period_start`,
-'' AS `effective_period_end`,
+a.`thidate` AS `effective_date_time`,
+a.`thidate` AS `effective_period_start`,
+a.`thidate` AS `effective_period_end`,
 '001151200' AS `performer`,
 CONCAT(a.val,' ',a.unit) AS `value_string`,
 a.val AS `value_qty`,
@@ -24,49 +25,50 @@ a.unit AS `value_unit`,
 '' AS `note`,
 '' AS `note_date_time`,
 0 AS `deleted`,
-strDatetimeToen(a.`thidate`) AS `last_update_date_time`
+a.`thidate` AS `last_update_date_time`
+
 FROM (
-    SELECT `row_id`,`thidate`,`thdatehn`,`temperature` AS `val`,'Temperature' AS `title`,'temperature' AS `fieldName`, '° C' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`temperature` AS `val`,'Temperature' AS `title`,'temperature' AS `fieldName`, '° C' AS `unit`
     FROM `opd` 
     WHERE `hn` != '' 
 
     UNION
 
-    SELECT `row_id`,`thidate`,`thdatehn`,`pause` AS `val`,'Heart Rate' AS `title`,'pause' AS `fieldName`, 'bpm' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`pause` AS `val`,'Heart Rate' AS `title`,'pause' AS `fieldName`, 'bpm' AS `unit`
     FROM `opd` 
     WHERE `hn` != '' 
 
     UNION
 
-    SELECT `row_id`,`thidate`,`thdatehn`,`rate` AS `val`,'Respiratory Rate' AS `title`,'rate' AS `fieldName`, 'bpm' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`rate` AS `val`,'Respiratory Rate' AS `title`,'rate' AS `fieldName`, 'bpm' AS `unit`
     FROM `opd` 
     WHERE `hn` != '' 
 
     UNION
 
-    SELECT `row_id`,`thidate`,`thdatehn`,`weight` AS `val`,'Weight' AS `title`,'weight' AS `fieldName`, 'kg' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`weight` AS `val`,'Weight' AS `title`,'weight' AS `fieldName`, 'kg' AS `unit`
     FROM `opd` 
     WHERE `hn` != '' 
 
     UNION
 
-    SELECT `row_id`,`thidate`,`thdatehn`,`height` AS `val`,'Height' AS `title`,'height' AS `fieldName`, 'cm' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`height` AS `val`,'Height' AS `title`,'height' AS `fieldName`, 'cm' AS `unit`
     FROM `opd` 
     WHERE `hn` != '' 
 
     UNION
 
-    SELECT `row_id`,`thidate`,`thdatehn`,`bp1` AS `val`,'Blood Pressure Systolic' AS `title`,'bp1' AS `fieldName`, 'mm Hg' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`bp1` AS `val`,'Blood Pressure Systolic' AS `title`,'bp1' AS `fieldName`, 'mm Hg' AS `unit`
     FROM `opd` 
     WHERE `hn` != '' 
 
     UNION
 
-    SELECT `row_id`,`thidate`,`thdatehn`,`bp2` AS `val`,'Blood Pressure Diastolic','bp2' AS `fieldName`, 'mm Hg' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`bp2` AS `val`,'Blood Pressure Diastolic','bp2' AS `fieldName`, 'mm Hg' AS `unit`
     FROM `opd` 
     WHERE `hn` != '' 
 ) AS a 
 LEFT JOIN `tmp_opday` AS b ON a.`thdatehn` = b.`thdatehn` 
-WHERE a.val != '' 
+WHERE ( a.val != '' OR a.val NOT LIKE '%..%' ) 
 AND b.`row_id` IS NOT NULL 
 ORDER BY a.`row_id` ASC
