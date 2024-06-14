@@ -137,6 +137,45 @@ SELECT `row_id`,`date`,`an`,`hn`,`ptname`,`bedcode`,`dcdate` FROM `ipcard` WHERE
 
 
 /*
+tmtlab มันเอามา join ไม่ได้เพราะมีปัญหาเรื่อง collection เลยต้องสร้างเป็น temp 
+*/
+DROP TABLE IF EXISTS `tmp_tmtlab` ;
+CREATE TABLE IF NOT EXISTS `tmp_tmtlab`(
+	`LCCode` VARCHAR(100) NOT NULL,
+	`TMLT` VARCHAR(100) NOT NULL,
+	KEY `LCCode` (`LCCode`)
+);
+INSERT INTO `tmp_tmtlab` 
+SELECT TRIM(`LCCode`) AS `LCCode`,TRIM(`TMLT`) AS `TMLT` FROM `tmtlab`;
+
+/*
+สร้าง labcare ขึ้นมาใหม่ โดยรวมเอา tmtlab เข้ามาเป็น table เดียวกัน
+diagnostic_report
+
+
+!!!! เอา map_labcare มารวมไว้ในนี้เลย ตอนเอาไปใช้งานใน orderhead จะได้ใช้ได้ต่อทันที!!!
+
+*/
+DROP TABLE `tmp_labcare`;
+CREATE TABLE IF NOT EXISTS `tmp_labcare`(
+	`code` VARCHAR(100) NOT NULL,
+	`detail` VARCHAR(255) NOT NULL,
+	`codelab` VARCHAR(100) NOT NULL,
+	`codex` VARCHAR(100) NOT NULL,
+	`TMLT` VARCHAR(100) NOT NULL,
+	KEY `code` (`code`),
+	KEY `codelab` (`codelab`)
+);
+INSERT INTO `tmp_labcare` 
+SELECT TRIM(x.`code`) AS `code`,x.`detail`,x.`codelab`,x.`codex`,y.`TMLT` FROM (
+	SELECT `code`,`detail`,`codelab`,`codex` FROM `labcare` WHERE `codelab` != '' AND `labstatus` = 'Y'GROUP BY `codelab` ORDER BY `codelab` ASC
+) AS x 
+LEFT JOIN `tmp_tmtlab` AS y ON x.`codex` = y.`LCCode`
+GROUP BY x.`codelab`;
+
+
+
+/*
 diagnostic_report
 */
 DROP TABLE IF EXISTS `tmp_orderhead`;
@@ -163,29 +202,64 @@ LEFT JOIN `tmp_ipcard` AS b ON b.`hn` = x.`hn` AND b.`bedcode` = x.`room`;
 
 /*
 diagnostic_report
+
+!!! กำลังคิดอยู่ว่า จะเอา tmtcode มารวมไว้ใน resulthead ไปเลย จะได้ง่ายกับการดึงข้อมูล
+
+!!! ตัวหลักของ resulthead ต้องเอา เพิ่มคีย์ให้กับ profilecode ด้วย
+
 */
 DROP TABLE IF EXISTS `tmp_resulthead`;
 CREATE TABLE IF NOT EXISTS `tmp_resulthead`(
-	`autonumber` INT(11) PRIMARY KEY,
+	`autonumber` INT(11) NOT NULL,
 	`labnumber` VARCHAR(100) NOT NULL,
     `hn` VARCHAR(100) NOT NULL,
 	`orderdate` VARCHAR(100) NOT NULL,
 	`profilecode` VARCHAR(100) NOT NULL,
-	`testgroupname` VARCHAR(100) NOT NULL,
+	`profilecode2` VARCHAR(100) NOT NULL,
 	`thdatehn` VARCHAR(100) NOT NULL,
     `patienttype` VARCHAR(100) NOT NULL,
 	KEY `labnumber` (`labnumber`),
+	KEY `profilecode` (`profilecode`),
+	KEY `profilecode2` (`profilecode2`),
 	KEY `thdatehn` (`thdatehn`)
 );
 INSERT INTO `tmp_resulthead` 
-SELECT `autonumber`,`labnumber`,`hn`,`orderdate`,`profilecode`,`testgroupname`, 
-CONCAT(SUBSTRING(`orderdate`,9,2),'-',SUBSTRING(`orderdate`,6,2),'-',(SUBSTRING(`orderdate`,1,4)+543),`hn`) AS `thdatehn`,
+SELECT a.`autonumber`,a.`labnumber`,a.`hn`,a.`orderdate`,
+a.`profilecode`,
+#b.`to` AS `profilecode2`,
+CONCAT(SUBSTRING(a.`orderdate`,9,2),'-',SUBSTRING(a.`orderdate`,6,2),'-',(SUBSTRING(a.`orderdate`,1,4)+543),a.`hn`) AS `thdatehn`,
 (CASE 
-    WHEN `sourcecode` IN ('00','100','101','102','ER','HD') THEN 'OPD' 
+    WHEN a.`sourcecode` IN ('00','100','101','102','ER','HD') THEN 'OPD' 
     ELSE 'IPD' 
 END ) AS `patienttype` 
-FROM `resulthead` 
-ORDER BY `autonumber` ASC;
+FROM (SELECT `autonumber`,`labnumber`,`hn`,`orderdate`,`profilecode`,`testgroupname`,`sourcecode` FROM `resulthead` WHERE `priority` <> '' ) AS a 
+#LEFT JOIN `map_labcare` AS b ON a.`profilecode` = b.`from` 
+ORDER BY a.`autonumber` ASC;
+
+
+
+######  resulthead ตัวที่กำลังปรับ
+SELECT a.`autonumber`,a.`labnumber`,a.`hn`,a.`orderdate`,
+a.`profilecode`,
+(CASE 
+    WHEN a.`sourcecode` IN ('00','100','101','102','ER','HD') THEN 'OPD' 
+    ELSE 'IPD' 
+END ) AS `patienttype`,
+
+( CASE WHEN b.`TMLT` IS NULL 
+	THEN (SELECT x.`TMLT` FROM tmp_labcare AS x WHERE x.`codelab` = c.`to` ) 
+	ELSE b.`TMLT`
+END ) AS `TMLT`,
+
+CONCAT(SUBSTRING(a.`orderdate`,9,2),'-',SUBSTRING(a.`orderdate`,6,2),'-',(SUBSTRING(a.`orderdate`,1,4)+543),a.`hn`) AS `thdatehn`
+
+FROM (SELECT `autonumber`,`labnumber`,`hn`,`orderdate`,`profilecode`,`testgroupname`,`sourcecode` FROM `resulthead` WHERE `priority` <> '' ) AS a 
+LEFT JOIN `tmp_labcare` AS b ON a.`profilecode` = b.`codelab` 
+LEFT JOIN `map_labcare` AS c ON a.`profilecode` = c.`from` 
+ORDER BY a.`autonumber` ASC
+
+
+
 
 /*
 observation
@@ -196,7 +270,7 @@ CREATE TABLE IF NOT EXISTS `tmp_resultdetail`(
     `labnumber` VARCHAR(100) NOT NULL,
 	`orderdate` VARCHAR(100) NOT NULL,
 	`profilecode` VARCHAR(100) NOT NULL,
-	`testgroupname` VARCHAR(100) NOT NULL,
+	`profilecode2` VARCHAR(100) NOT NULL,
 	`thdatehn` VARCHAR(100) NOT NULL,
     `an` VARCHAR(100) NOT NULL,
 	`labcode` VARCHAR(100) NOT NULL,
@@ -212,7 +286,7 @@ INSERT INTO `tmp_resultdetail`
 SELECT x.*,y.`labcode`,y.`labname`,y.`result`,y.`unit`,y.`authorisedate`
 FROM (
 
-	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`an`
+	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,,a.`profilecode2`,a.`thdatehn`,b.`an`
 	FROM `tmp_resulthead` AS a 
 	LEFT JOIN `tmp_orderhead` AS b ON a.`labnumber` = b.`labnumber` 
 	WHERE b.`autonumber` IS NOT NULL
@@ -221,39 +295,3 @@ FROM (
 LEFT JOIN `resultdetail` AS y ON x.`autonumber` = y.`autonumber` 
 WHERE y.`autonumber` IS NOT NULL AND ( y.`result` <> '' AND y.`result` NOT LIKE '%-%' );
 
-
-
-/*
-tmtlab มันเอามา join ไม่ได้เพราะมีปัญหาเรื่อง collection เลยต้องสร้างเป็น temp 
-*/
-DROP TABLE IF EXISTS `tmp_tmtlab` ;
-CREATE TABLE IF NOT EXISTS `tmp_tmtlab`(
-	`LCCode` VARCHAR(100) NOT NULL,
-	`TMLT` VARCHAR(100) NOT NULL,
-	KEY `LCCode` (`LCCode`)
-);
-INSERT INTO `tmp_tmtlab` 
-SELECT TRIM(`LCCode`) AS `LCCode`,TRIM(`TMLT`) AS `TMLT` FROM `tmtlab`;
-
-/*
-สร้าง labcare ขึ้นมาใหม่ โดยรวมเอา tmtlab เข้ามาเป็น table เดียวกัน
-diagnostic_report
-*/
-DROP TABLE `tmp_labcare`;
-CREATE TABLE IF NOT EXISTS `tmp_labcare`(
-	`code` VARCHAR(100) NOT NULL,
-	`detail` VARCHAR(255) NOT NULL,
-	`codelab` VARCHAR(100) NOT NULL,
-	`codex` VARCHAR(100) NOT NULL,
-	`labpart` VARCHAR(100) NOT NULL,
-	`TMLT` VARCHAR(100) NOT NULL,
-	KEY `codelab` (`codelab`)
-);
-INSERT INTO `tmp_labcare` 
-SELECT TRIM(x.`code`) AS `code`,x.`detail`,x.`codelab`,x.`codex`,x.`labpart`,y.`TMLT` FROM (
-	SELECT `code`,`detail`,`codelab`,`codex`,`labpart`
-	FROM `labcare` 
-	WHERE `codelab` != '' 
-) AS x 
-LEFT JOIN `tmp_tmtlab` AS y ON x.`codex` = y.`LCCode`
-GROUP BY x.`codelab`;

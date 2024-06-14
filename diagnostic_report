@@ -8,7 +8,7 @@ y.`row_id` AS `encounter_id`,
 'final' AS `status`,
 'Laboratory' AS `category_display`,
 'LAB' AS `category_code`,
-'hl7-diagnostic-report-category' AS `category_system`,
+'http://terminology.hl7.org/CodeSystem/v2-0074' AS `category_system`,
 z.`detail` AS `code_display`,
 z.`TMLT` AS `code_code`,
 'http://this.or.th/index_TMLT.php' AS `code_system`,
@@ -23,7 +23,7 @@ x.`orderdate` AS `effective_date_time`,
 0 AS `deleted`,
 x.`orderdate` AS `last_update_date_time`
 FROM ( 
-	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`patienttype`,b.`an`
+	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`thdatehn`,b.`patienttype`,b.`an`
 	FROM ( SELECT * FROM `tmp_resulthead` WHERE `patienttype` = 'OPD' ) AS a 
 	LEFT JOIN ( SELECT * FROM `tmp_orderhead` WHERE `an` = '' ) AS b ON a.`labnumber` = b.`labnumber` 
 	WHERE b.`autonumber` IS NOT NULL
@@ -45,7 +45,7 @@ y.`row_id` AS `encounter_id`,
 'final' AS `status`,
 'Laboratory' AS `category_display`,
 'LAB' AS `category_code`,
-'hl7-diagnostic-report-category' AS `category_system`,
+'http://terminology.hl7.org/CodeSystem/v2-0074' AS `category_system`,
 z.`detail` AS `code_display`,
 z.`TMLT` AS `code_code`,
 'http://this.or.th/index_TMLT.php' AS `code_system`,
@@ -60,7 +60,7 @@ x.`orderdate` AS `effective_date_time`,
 0 AS `deleted`,
 x.`orderdate` AS `last_update_date_time`
 FROM ( 
-	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`testgroupname`,a.`thdatehn`,b.`patienttype`,b.`an`
+	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`thdatehn`,b.`patienttype`,b.`an`
 	FROM ( SELECT * FROM `tmp_resulthead` WHERE `patienttype` = 'IPD' ) AS a 
 	LEFT JOIN ( SELECT * FROM `tmp_orderhead` WHERE `an` <> '' ) AS b ON a.`labnumber` = b.`labnumber` 
 	WHERE b.`autonumber` IS NOT NULL
