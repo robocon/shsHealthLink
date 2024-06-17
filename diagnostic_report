@@ -9,8 +9,8 @@ y.`row_id` AS `encounter_id`,
 'Laboratory' AS `category_display`,
 'LAB' AS `category_code`,
 'http://terminology.hl7.org/CodeSystem/v2-0074' AS `category_system`,
-z.`detail` AS `code_display`,
-z.`TMLT` AS `code_code`,
+x.`detail` AS `code_display`,
+x.`tmlt` AS `code_code`,
 'http://this.or.th/index_TMLT.php' AS `code_system`,
 x.`orderdate` AS `effective_date_time`,
 '' AS `effective_period_start`,
@@ -23,16 +23,14 @@ x.`orderdate` AS `effective_date_time`,
 0 AS `deleted`,
 x.`orderdate` AS `last_update_date_time`
 FROM ( 
-	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`thdatehn`,b.`patienttype`,b.`an`
-	FROM ( SELECT * FROM `tmp_resulthead` WHERE `patienttype` = 'OPD' ) AS a 
-	LEFT JOIN ( SELECT * FROM `tmp_orderhead` WHERE `an` = '' ) AS b ON a.`labnumber` = b.`labnumber` 
+	SELECT a.`autonumber`,a.`orderdate`,b.`an`,a.`tmlt`,a.`detail`,a.`thdatehn` 
+	FROM ( SELECT * FROM `tmp_resulthead` WHERE `patienttype` = 'OPD' AND ( `tmlt` <> '' AND `detail` <> '' ) ) AS a 
+	LEFT JOIN ( SELECT `autonumber`,`labnumber`,`patienttype`,`an` FROM `tmp_orderhead` WHERE `an` = '' ) AS b ON a.`labnumber` = b.`labnumber` 
 	WHERE b.`autonumber` IS NOT NULL
 ) AS x 
-LEFT JOIN (SELECT * FROM `tmp_opday` WHERE `an` IS NULL OR `an` = '' ) AS y ON x.`thdatehn` = y.`thdatehn` 
-LEFT JOIN `tmp_labcare` AS z ON x.`profilecode` = z.`codelab` 
+LEFT JOIN (SELECT `row_id`,`an`,`idcard`,`thdatehn` FROM `tmp_opday` WHERE (`an` IS NULL OR `an` = '') ) AS y ON x.`thdatehn` = y.`thdatehn` 
 WHERE y.`row_id` IS NOT NULL 
-AND z.`TMLT` <> '' 
-AND z.`detail` IS NOT NULL;
+ORDER BY x.`autonumber` ASC;
 
 
 
@@ -46,8 +44,8 @@ y.`row_id` AS `encounter_id`,
 'Laboratory' AS `category_display`,
 'LAB' AS `category_code`,
 'http://terminology.hl7.org/CodeSystem/v2-0074' AS `category_system`,
-z.`detail` AS `code_display`,
-z.`TMLT` AS `code_code`,
+x.`detail` AS `code_display`,
+x.`tmlt` AS `code_code`,
 'http://this.or.th/index_TMLT.php' AS `code_system`,
 x.`orderdate` AS `effective_date_time`,
 '' AS `effective_period_start`,
@@ -60,12 +58,11 @@ x.`orderdate` AS `effective_date_time`,
 0 AS `deleted`,
 x.`orderdate` AS `last_update_date_time`
 FROM ( 
-	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`thdatehn`,b.`patienttype`,b.`an`
-	FROM ( SELECT * FROM `tmp_resulthead` WHERE `patienttype` = 'IPD' ) AS a 
-	LEFT JOIN ( SELECT * FROM `tmp_orderhead` WHERE `an` <> '' ) AS b ON a.`labnumber` = b.`labnumber` 
+	SELECT a.`autonumber`,a.`orderdate`,b.`an`,a.`tmlt`,a.`detail` 
+	FROM ( SELECT * FROM `tmp_resulthead` WHERE `patienttype` = 'IPD' AND ( `tmlt` <> '' AND `detail` <> '' ) ) AS a 
+	LEFT JOIN ( SELECT `autonumber`,`labnumber`,`patienttype`,`an` FROM `tmp_orderhead` WHERE `an` <> '' ) AS b ON a.`labnumber` = b.`labnumber` 
 	WHERE b.`autonumber` IS NOT NULL
 ) AS x 
-LEFT JOIN (SELECT * FROM `tmp_opday` WHERE `an` IS NOT NULL OR `an` <> '' ) AS y ON x.`an` = y.`an` 
-LEFT JOIN `tmp_labcare` AS z ON x.`profilecode` = z.`codelab` 
-AND z.`TMLT` <> '' 
-AND z.`detail` IS NOT NULL;
+LEFT JOIN (SELECT `row_id`,`an`,`idcard` FROM `tmp_opday` WHERE ( `an` IS NOT NULL AND `an` <> '') ) AS y ON x.`an` = y.`an`  
+WHERE y.`row_id` IS NOT NULL
+ORDER BY x.`autonumber` ASC;

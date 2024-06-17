@@ -215,50 +215,34 @@ CREATE TABLE IF NOT EXISTS `tmp_resulthead`(
     `hn` VARCHAR(100) NOT NULL,
 	`orderdate` VARCHAR(100) NOT NULL,
 	`profilecode` VARCHAR(100) NOT NULL,
-	`profilecode2` VARCHAR(100) NOT NULL,
+	`tmlt` VARCHAR(100) NOT NULL,
+	`detail` VARCHAR(255) NOT NULL,
 	`thdatehn` VARCHAR(100) NOT NULL,
     `patienttype` VARCHAR(100) NOT NULL,
 	KEY `labnumber` (`labnumber`),
 	KEY `profilecode` (`profilecode`),
-	KEY `profilecode2` (`profilecode2`),
+	KEY `tmlt` (`tmlt`),
 	KEY `thdatehn` (`thdatehn`)
 );
 INSERT INTO `tmp_resulthead` 
-SELECT a.`autonumber`,a.`labnumber`,a.`hn`,a.`orderdate`,
-a.`profilecode`,
-#b.`to` AS `profilecode2`,
-CONCAT(SUBSTRING(a.`orderdate`,9,2),'-',SUBSTRING(a.`orderdate`,6,2),'-',(SUBSTRING(a.`orderdate`,1,4)+543),a.`hn`) AS `thdatehn`,
-(CASE 
+SELECT m.`autonumber`,m.`labnumber`,m.`hn`,m.`orderdate`,m.`profilecode`,c.`TMLT`,c.`detail`,m.`thdatehn`,m.`patienttype`
+FROM ( 
+	SELECT a.`autonumber`,a.`labnumber`,a.`hn`,a.`orderdate`, 
+	(CASE 
+		WHEN b.`to` IS NOT NULL THEN b.`to`
+		ELSE a.`profilecode`
+	END ) AS `profilecode`,
+	(CASE 
     WHEN a.`sourcecode` IN ('00','100','101','102','ER','HD') THEN 'OPD' 
     ELSE 'IPD' 
-END ) AS `patienttype` 
-FROM (SELECT `autonumber`,`labnumber`,`hn`,`orderdate`,`profilecode`,`testgroupname`,`sourcecode` FROM `resulthead` WHERE `priority` <> '' ) AS a 
-#LEFT JOIN `map_labcare` AS b ON a.`profilecode` = b.`from` 
-ORDER BY a.`autonumber` ASC;
-
-
-
-######  resulthead ตัวที่กำลังปรับ
-SELECT a.`autonumber`,a.`labnumber`,a.`hn`,a.`orderdate`,
-a.`profilecode`,
-(CASE 
-    WHEN a.`sourcecode` IN ('00','100','101','102','ER','HD') THEN 'OPD' 
-    ELSE 'IPD' 
-END ) AS `patienttype`,
-
-( CASE WHEN b.`TMLT` IS NULL 
-	THEN (SELECT x.`TMLT` FROM tmp_labcare AS x WHERE x.`codelab` = c.`to` ) 
-	ELSE b.`TMLT`
-END ) AS `TMLT`,
-
-CONCAT(SUBSTRING(a.`orderdate`,9,2),'-',SUBSTRING(a.`orderdate`,6,2),'-',(SUBSTRING(a.`orderdate`,1,4)+543),a.`hn`) AS `thdatehn`
-
-FROM (SELECT `autonumber`,`labnumber`,`hn`,`orderdate`,`profilecode`,`testgroupname`,`sourcecode` FROM `resulthead` WHERE `priority` <> '' ) AS a 
-LEFT JOIN `tmp_labcare` AS b ON a.`profilecode` = b.`codelab` 
-LEFT JOIN `map_labcare` AS c ON a.`profilecode` = c.`from` 
-ORDER BY a.`autonumber` ASC
-
-
+	END ) AS `patienttype`,
+	CONCAT(SUBSTRING(a.`orderdate`,9,2),'-',SUBSTRING(a.`orderdate`,6,2),'-',(SUBSTRING(a.`orderdate`,1,4)+543),a.`hn`) AS `thdatehn`
+	FROM (
+		SELECT `autonumber`,`labnumber`,`hn`,`orderdate`,`profilecode`,`sourcecode` FROM `resulthead` WHERE `priority` <> ''
+	) AS a 
+	LEFT JOIN `map_labcare` AS b ON a.`profilecode` = b.`from`
+) AS m 
+LEFT JOIN `tmp_labcare` AS c ON m.`profilecode` = c.`codelab` ;
 
 
 /*
@@ -270,14 +254,14 @@ CREATE TABLE IF NOT EXISTS `tmp_resultdetail`(
     `labnumber` VARCHAR(100) NOT NULL,
 	`orderdate` VARCHAR(100) NOT NULL,
 	`profilecode` VARCHAR(100) NOT NULL,
-	`profilecode2` VARCHAR(100) NOT NULL,
+	`tmlt` VARCHAR(100) NOT NULL,
 	`thdatehn` VARCHAR(100) NOT NULL,
     `an` VARCHAR(100) NOT NULL,
 	`labcode` VARCHAR(100) NOT NULL,
 	`labname` VARCHAR(100) NOT NULL,
 	`result` VARCHAR(100) NOT NULL,
 	`unit` VARCHAR(100) NOT NULL,
-	`authorisedate` VARCHAR(100) NOT NULL,
+	`authorisedate` VARCHAR(255) NOT NULL,
 	KEY `labnumber` (`labnumber`),
 	KEY `thdatehn` (`thdatehn`),
     KEY `an` (`an`)
@@ -286,7 +270,7 @@ INSERT INTO `tmp_resultdetail`
 SELECT x.*,y.`labcode`,y.`labname`,y.`result`,y.`unit`,y.`authorisedate`
 FROM (
 
-	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,,a.`profilecode2`,a.`thdatehn`,b.`an`
+	SELECT a.`autonumber`,a.`labnumber`,a.`orderdate`,a.`profilecode`,a.`tmlt`,a.`thdatehn`,b.`an`
 	FROM `tmp_resulthead` AS a 
 	LEFT JOIN `tmp_orderhead` AS b ON a.`labnumber` = b.`labnumber` 
 	WHERE b.`autonumber` IS NOT NULL
@@ -294,4 +278,3 @@ FROM (
 ) AS x 
 LEFT JOIN `resultdetail` AS y ON x.`autonumber` = y.`autonumber` 
 WHERE y.`autonumber` IS NOT NULL AND ( y.`result` <> '' AND y.`result` NOT LIKE '%-%' );
-

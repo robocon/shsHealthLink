@@ -9,7 +9,7 @@ a.`autonumber` AS `diagnostic_report_id`,
 'final' AS `status`,
 'laboratory' AS `category`,
 a.`labname` AS `code_display`,
-c.`TMLT`  AS `code_code`,
+a.`tmlt` AS `code_code`,
 'http://this.or.th/index_TMLT.ph' AS `code_system`,
 a.`authorisedate` AS `effective_date_time`,
 '' AS `effective_period_start`,
@@ -29,13 +29,10 @@ a.`unit` AS `value_unit`,
 '' AS `note_date_time`,
 0 AS `deleted`,
 a.`authorisedate` AS `last_update_date_time`
-FROM ( SELECT * FROM `tmp_resultdetail` WHERE `an` = '' ) AS a 
-LEFT JOIN (SELECT * FROM `tmp_opday` WHERE `an` IS NULL OR `an` = '' ) AS b ON a.`thdatehn` = b.`thdatehn` 
-LEFT JOIN `tmp_labcare` AS c ON a.`profilecode` = c.`codelab` 
-WHERE b.`row_id` IS NOT NULL AND c.`TMLT` <> '' 
+FROM ( SELECT * FROM `tmp_resultdetail` WHERE `an` = '' AND `tmlt` <> '') AS a 
+LEFT JOIN (SELECT `row_id`,`an`,`idcard`,`thdatehn` FROM `tmp_opday` WHERE (`an` IS NULL OR `an` = '') ) AS b ON a.`thdatehn` = b.`thdatehn` 
+WHERE b.`row_id` IS NOT NULL 
 ORDER BY a.`autonumber`;
-
-
 
 INSERT INTO `client_observation` (`source_id`, `id`, `patient_cid`, `encounter_id`, `diagnostic_report_id`, `status`, `category`, `code_display`, `code_code`, `code_system`, `effective_date_time`, `effective_period_start`, `effective_period_end`, `performer`, `value_string`, `value_qty`, `value_unit`, `value_code`, `value_system`, `interpretation_display`, `interpretation_code`, `reference_range_low`, `reference_range_high`, `reference_range_text`, `note`, `note_date_time`, `deleted`, `last_update_date_time`) 
 SELECT 
@@ -47,7 +44,7 @@ a.`autonumber` AS `diagnostic_report_id`,
 'final' AS `status`,
 'laboratory' AS `category`,
 a.`labname` AS `code_display`,
-c.`TMLT`  AS `code_code`,
+a.`tmlt` AS `code_code`,
 'http://this.or.th/index_TMLT.ph' AS `code_system`,
 a.`authorisedate` AS `effective_date_time`,
 '' AS `effective_period_start`,
@@ -67,8 +64,7 @@ a.`unit` AS `value_unit`,
 '' AS `note_date_time`,
 0 AS `deleted`,
 a.`authorisedate` AS `last_update_date_time`
-FROM ( SELECT * FROM `tmp_resultdetail` WHERE `an` <> '' ) AS a 
-LEFT JOIN (SELECT * FROM `tmp_opday` WHERE `an` IS NOT NULL OR `an` <> '' ) AS b ON a.`an` = b.`an` 
-LEFT JOIN `tmp_labcare` AS c ON a.`profilecode` = c.`codelab` 
-WHERE b.`row_id` IS NOT NULL AND c.`TMLT` <> '' 
+FROM ( SELECT * FROM `tmp_resultdetail` WHERE `an` <> '' AND `tmlt` <> '' ) AS a 
+LEFT JOIN (SELECT `row_id`,`an`,`idcard` FROM `tmp_opday` WHERE ( `an` IS NOT NULL AND `an` <> '')) AS b ON a.`an` = b.`an` 
+WHERE b.`row_id` IS NOT NULL
 ORDER BY a.`autonumber`;

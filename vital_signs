@@ -12,9 +12,9 @@ a.`thidate` AS `effective_date_time`,
 a.`thidate` AS `effective_period_start`,
 a.`thidate` AS `effective_period_end`,
 '001151200' AS `performer`,
-CONCAT(a.val,' ',a.unit) AS `value_string`,
-a.val AS `value_qty`,
-a.unit AS `value_unit`,
+CONCAT(a.`val`,' ',a.`unit`) AS `value_string`,
+a.`val` AS `value_qty`,
+a.`unit` AS `value_unit`,
 '' AS `value_code`,
 '' AS `value_system`,
 '' AS `interpretation_display`,
@@ -28,47 +28,47 @@ a.unit AS `value_unit`,
 a.`thidate` AS `last_update_date_time`
 
 FROM (
-    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`temperature` AS `val`,'Temperature' AS `title`,'temperature' AS `fieldName`, '° C' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,TRIM(`temperature`) AS `val`,'Temperature' AS `title`,'temperature' AS `fieldName`, '° C' AS `unit`
     FROM `opd` 
-    WHERE `hn` != '' 
+    WHERE `hn` != '' AND ( TRIM(`temperature`) <> '' AND TRIM(`temperature`) NOT LIKE '%-%') 
 
     UNION
 
-    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`pause` AS `val`,'Heart Rate' AS `title`,'pause' AS `fieldName`, 'bpm' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,TRIM(`pause`) AS `val`,'Heart Rate' AS `title`,'pause' AS `fieldName`, 'bpm' AS `unit`
     FROM `opd` 
-    WHERE `hn` != '' 
+    WHERE `hn` != '' AND ( TRIM(`pause`) <> '' AND TRIM(`pause`) NOT LIKE '%-%') 
 
     UNION
 
-    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`rate` AS `val`,'Respiratory Rate' AS `title`,'rate' AS `fieldName`, 'bpm' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,TRIM(`rate`) AS `val`,'Respiratory Rate' AS `title`,'rate' AS `fieldName`, 'bpm' AS `unit`
     FROM `opd` 
-    WHERE `hn` != '' 
+    WHERE `hn` != '' AND ( TRIM(`rate`) <> '' AND TRIM(`rate`) NOT LIKE '%-%') 
 
     UNION
 
-    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`weight` AS `val`,'Weight' AS `title`,'weight' AS `fieldName`, 'kg' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,TRIM(`weight`) AS `val`,'Weight' AS `title`,'weight' AS `fieldName`, 'kg' AS `unit`
     FROM `opd` 
-    WHERE `hn` != '' 
+    WHERE `hn` != '' AND ( TRIM(`weight`) <> '' AND TRIM(`weight`) NOT LIKE '%-%') 
 
     UNION
 
-    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`height` AS `val`,'Height' AS `title`,'height' AS `fieldName`, 'cm' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,TRIM(`height`) AS `val`,'Height' AS `title`,'height' AS `fieldName`, 'cm' AS `unit`
     FROM `opd` 
-    WHERE `hn` != '' 
+    WHERE `hn` != '' AND ( TRIM(`height`) <> '' AND TRIM(`height`) NOT LIKE '%-%') 
 
     UNION
 
-    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`bp1` AS `val`,'Blood Pressure Systolic' AS `title`,'bp1' AS `fieldName`, 'mm Hg' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,TRIM(`bp1`) AS `val`,'Blood Pressure Systolic' AS `title`,'bp1' AS `fieldName`, 'mm Hg' AS `unit`
     FROM `opd` 
-    WHERE `hn` != '' 
+    WHERE `hn` != '' AND ( TRIM(`bp1`) <> '' AND TRIM(`bp1`) NOT LIKE '%-%') 
 
     UNION
 
-    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,`bp2` AS `val`,'Blood Pressure Diastolic','bp2' AS `fieldName`, 'mm Hg' AS `unit`
+    SELECT `row_id`,CONCAT( (SUBSTRING(`thidate`,1,4) - 543), SUBSTRING(`thidate`,5, 25)  ) AS `thidate`,`thdatehn`,TRIM(`bp2`) AS `val`,'Blood Pressure Diastolic','bp2' AS `fieldName`, 'mm Hg' AS `unit`
     FROM `opd` 
-    WHERE `hn` != '' 
+    WHERE `hn` != '' AND ( TRIM(`bp2`) <> '' AND TRIM(`bp2`) NOT LIKE '%-%') 
 ) AS a 
 LEFT JOIN `tmp_opday` AS b ON a.`thdatehn` = b.`thdatehn` 
-WHERE ( a.val != '' OR a.val NOT LIKE '%..%' ) 
-AND b.`row_id` IS NOT NULL 
+WHERE b.`row_id` IS NOT NULL 
+AND ( TRIM(a.`val`) <> '' AND TRIM(a.`val`) NOT LIKE '%..%' AND TRIM(a.`val`) NOT LIKE '%-%' AND TRIM(a.`val`) != '0' AND TRIM(a.`val`) != '0.0' AND TRIM(a.`val`) != '.' AND TRIM(a.`val`) != '.0' ) 
 ORDER BY a.`row_id` ASC
