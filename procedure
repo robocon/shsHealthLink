@@ -21,7 +21,7 @@ a.`admdate` AS `performed_date_time`,
 '' AS `outcome_display`,
 '' AS `outcome_code`,
 '' AS `note`,
-a.`admdate` AS `note_date_time`,
+'' AS `note_date_time`,
 0 AS `deleted`,
 a.`admdate` AS `last_update_date_time`
 FROM 
@@ -63,7 +63,7 @@ CONCAT( (SUBSTRING(a.`admdate`,1,4) - 543), SUBSTRING(a.`admdate`,5, 25) ) AS `p
 '' AS `outcome_display`,
 '' AS `outcome_code`,
 '' AS `note`,
-CONCAT( (SUBSTRING(a.`admdate`,1,4) - 543), SUBSTRING(a.`admdate`,5, 25) ) AS `note_date_time`,
+'' AS `note_date_time`,
 0 AS `deleted`,
 CONCAT( (SUBSTRING(a.`admdate`,1,4) - 543), SUBSTRING(a.`admdate`,5, 25) ) AS `last_update_date_time` 
 FROM 

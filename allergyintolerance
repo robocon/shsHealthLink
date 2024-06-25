@@ -22,27 +22,32 @@ END) AS `verification_status`,
 	WHEN TRIM(c.`genname`) <> '' THEN TRIM(c.`genname`)
 	ELSE TRIM(a.`tradname`)
 END) AS `code_display`,
-(CASE
-	WHEN TRIM(c.`tmt`) <> '' THEN TRIM(c.`tmt`)
-	ELSE TRIM(a.`tradname`)
-END) AS `code_code`,
-(CASE
-	WHEN TRIM(c.`tmt`) <> '' THEN TRIM(c.`tmt`)
-	ELSE 'https://surasakhospital.mi.th/'
-END) AS `code_sytem`,
-IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `onset_date_time`,
-IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `recorded_date`,
+TRIM(c.`tmt`) AS `code_code`,
+'https://healthlink.go.th/tmt/gpu' AS 'code_sytem',
+'' AS `onset_date_time`,
+IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01 01:00:00') AS `recorded_date`,
 allergyReaction(a.`advreact`) AS `reaction_display`,
-allergyReaction(a.`advreact`) AS `reaction_code`,
-'https://surasakhospital.mi.th/' AS `reaction_system`,
+'' AS `reaction_code`,
+'' AS `reaction_system`,
 'moderate' AS `reaction_severity`,
 '' AS `note`,
-IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `note_date_time`,
+'' AS `note_date_time`,
 0 AS `deleted`,
-IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01T01:00:00Z') AS `last_update_date_time`
-FROM `drugreact` AS a 
-LEFT JOIN `opcard` AS b ON b.`hn` = a.`hn` 
+IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01 01:00:00') AS `last_update_date_time`
+FROM ( 
+	SELECT `row_id`,`hn`,`drugcode`,`asses`,`advreact`,`tradname`,`date` 
+	FROM `drugreact` 
+	WHERE `advreact` <> '' 
+	AND ( TRIM(`drugcode`) <> '' AND TRIM(`drugcode`) != '0' ) 
+	AND ( TRIM(`drugcode`) NOT LIKE '-%' AND TRIM(`drugcode`) NOT LIKE '.%' ) 
+	ORDER BY `drugcode`
+) AS a 
+LEFT JOIN ( 
+	SELECT `row_id`,`hn`,TRIM(`idcard`) AS `idcard`,`status` 
+	FROM `opcard` 
+	WHERE TRIM(`idcard`) <> '' AND TRIM(`idcard`) NOT LIKE '%-%' 
+	ORDER BY `idcard` ASC 
+) AS b ON b.`hn` = a.`hn` 
 LEFT JOIN `druglst` AS c ON c.`drugcode` = a.`drugcode` 
-WHERE (b.`idcard` <> '' AND b.`idcard` != '-') 
-AND a.`advreact` != ''  
+WHERE TRIM(c.`tmt`) <> '' AND TRIM(b.`idcard`) <> '' 
 ORDER BY a.`row_id` ASC;

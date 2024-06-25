@@ -14,7 +14,7 @@ a.`tmt` AS 'vaccine_code',
 a.`date` AS 'occurrence_date_time',
 '001151200' AS 'performer',
 '' AS 'note',
-a.`date` AS 'note_date_time',
+'' AS 'note_date_time',
 0 AS 'deleted',
 a.`date` AS 'last_update_date_time' 
 FROM (
@@ -41,7 +41,7 @@ x.`tmt` AS 'vaccine_code',
 x.`date` AS 'occurrence_date_time',
 '001151200' AS 'performer',
 '' AS 'note',
-x.`date` AS 'note_date_time',
+'' AS 'note_date_time',
 0 AS 'deleted',
 x.`date` AS 'last_update_date_time' 
 FROM (
