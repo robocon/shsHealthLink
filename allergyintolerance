@@ -23,7 +23,7 @@ END) AS `verification_status`,
 	ELSE TRIM(a.`tradname`)
 END) AS `code_display`,
 TRIM(c.`tmt`) AS `code_code`,
-'https://healthlink.go.th/tmt/gpu' AS 'code_sytem',
+'https://healthlink.go.th/tmt/tpu' AS 'code_sytem',
 '' AS `onset_date_time`,
 IF(a.`date` != '0000-00-00 00:00:00' ,checkToBc(a.`date`), '2022-01-01 01:00:00') AS `recorded_date`,
 allergyReaction(a.`advreact`) AS `reaction_display`,
