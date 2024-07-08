@@ -26,7 +26,7 @@ FROM (
 ) AS a 
 LEFT JOIN `tmp_opday` AS b ON b.`thdatehn` = a.`thdatehn` 
 WHERE b.row_id IS NOT NULL 
-ORDER BY a.`row_id` ASC
+ORDER BY a.`row_id` ASC;
 
 
 INSERT INTO `client_immunization` (`source_id`, `id`, `patient_cid`, `encounter_id`, `status`, `vaccine_display`, `vaccine_code`, `vaccine_system`, `occurrence_date_time`, `performer`, `note`, `note_date_time`, `deleted`, `last_update_date_time`)
