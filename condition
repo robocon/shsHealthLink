@@ -22,7 +22,7 @@ CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'rec
 '' AS 'note_date_time',
 (CASE WHEN a.`type`='PRINCIPLE' THEN 'Chief complaint' ELSE 'Comorbidity diagnosis' END) AS `diagnosis_display`,
 (CASE WHEN a.`type`='PRINCIPLE' THEN 'CC' ELSE 'CM' END) AS `diagnosis_code`,
-'hospital' AS `diagnosis_system`,
+'http://terminology.hl7.org/CodeSystem/diagnosis-role' AS `diagnosis_system`,
 '1' AS 'diagnosis_rank',
 0 AS 'deleted',
 CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'last_update_date_time'
@@ -54,7 +54,7 @@ CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'rec
 '' AS 'note_date_time',
 'Discharge diagnosis' AS `diagnosis_display`,
 'DD' AS `diagnosis_code`,
-'hospital' AS `diagnosis_system`,
+'http://terminology.hl7.org/CodeSystem/diagnosis-role' AS `diagnosis_system`,
 '1' AS 'diagnosis_rank',
 0 AS 'deleted',
 CONCAT( (SUBSTRING(a.`svdate`,1,4) - 543), SUBSTRING(a.`svdate`,5, 25)  )AS 'last_update_date_time'
